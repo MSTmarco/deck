@@ -1,1540 +1,2079 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VORNTEC – The ChatGPT of Gas Leaks</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: #050510;
-            color: #f5f5f5;
-            overflow: hidden;
-            position: relative;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(0deg, transparent 24%, rgba(0, 82, 255, 0.015) 25%, rgba(0, 82, 255, 0.015) 26%, transparent 27%, transparent 74%, rgba(0, 82, 255, 0.015) 75%, rgba(0, 82, 255, 0.015) 76%, transparent 77%, transparent),
-                linear-gradient(90deg, transparent 24%, rgba(0, 82, 255, 0.015) 25%, rgba(0, 82, 255, 0.015) 26%, transparent 27%, transparent 74%, rgba(0, 82, 255, 0.015) 75%, rgba(0, 82, 255, 0.015) 76%, transparent 77%, transparent);
-            background-size: 60px 60px;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .deck-container {
-            position: relative;
-            z-index: 1;
-        }
-
-        section {
-            height: 100vh;
-            width: 100vw;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 5rem 4rem 6rem 4rem;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            position: relative;
-        }
-
-        section.active {
-            display: flex;
-            opacity: 1;
-        }
-
-        .slide-content {
-            max-width: 1100px;
-            width: 100%;
-            height: 100%;
-            max-height: calc(100vh - 11rem);
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-
-        /* Source citations - fixed at bottom */
-        .source-citation {
-            position: absolute;
-            bottom: -3rem;
-            left: 0;
-            right: 0;
-            font-size: 0.65rem;
-            color: #7a7f95;
-            line-height: 1.4;
-            text-align: center;
-            padding: 0 1rem;
-        }
-
-        h1 {
-            font-size: 3.5rem;
-            font-weight: 300;
-            line-height: 1.15;
-            margin-bottom: 2rem;
-            letter-spacing: -0.03em;
-        }
-
-        h2 {
-            font-size: 2rem;
-            font-weight: 300;
-            line-height: 1.3;
-            margin-bottom: 1.5rem;
-            letter-spacing: -0.02em;
-            border-bottom: 1px solid rgba(0, 102, 255, 0.25);
-            padding-bottom: 0.8rem;
-            flex-shrink: 0;
-        }
-
-        h3 {
-            font-size: 1.3rem;
-            font-weight: 400;
-            margin-bottom: 1rem;
-            color: #a0a6b8;
-        }
-
-        .subtitle {
-            font-size: 1.4rem;
-            color: #b0b5c8;
-            line-height: 1.5;
-            margin-bottom: 0;
-            font-weight: 300;
-        }
-
-        .accent {
-            color: #2F488E;
-        }
-
-        .mono {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-size: 0.8em;
-            color: #7a7f95;
-            letter-spacing: 0.05em;
-        }
-
-        .source-icon {
-            font-size: 0.7rem;
-            color: #7a7f95;
-            margin-left: 0.3rem;
-            opacity: 0.6;
-        }
-
-        .two-col {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2.5rem;
-            align-items: start;
-        }
-
-        .text-block {
-            margin-bottom: 1.5rem;
-        }
-
-        .text-block:last-child {
-            margin-bottom: 0;
-        }
-
-        ul {
-            list-style: none;
-            margin: 1rem 0;
-        }
-
-        li {
-            margin-bottom: 0.7rem;
-            padding-left: 1.5rem;
-            position: relative;
-            line-height: 1.5;
-            color: #e0e0e0;
-            font-size: 0.95rem;
-        }
-
-        li::before {
-            content: '—';
-            position: absolute;
-            left: 0;
-            color: #2F488E;
-        }
-
-        .highlight-box {
-            background: rgba(0, 102, 255, 0.04);
-            border-left: 3px solid #2F488E;
-            padding: 1rem 1.5rem;
-            margin: 1.2rem 0;
-            font-style: italic;
-            color: #d8d8d8;
-            line-height: 1.5;
-            font-size: 0.95rem;
-        }
-
-        img {
-            max-width: 100%;
-            height: auto;
-            opacity: 0.75;
-            filter: saturate(0.6) brightness(0.85);
-        }
-
-        .logo {
-            opacity: 1;
-            filter: none;
-            max-height: 70px;
-            margin-bottom: 1.5rem;
-        }
-
-        .avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            border: 2px solid #2F488E;
-            object-fit: cover;
-            margin-bottom: 0.8rem;
-        }
-
-        .logo-strip {
-            display: flex;
-            gap: 2rem;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin: 2rem 0 1.5rem 0;
-            opacity: 0.65;
-        }
-
-        .logo-strip img {
-            height: 35px;
-            width: auto;
-            filter: grayscale(0.2) brightness(2.2) contrast(1.3);
-        }
-
-        .logo-muted {
-            opacity: 0.35;
-            max-width: 180px;
-        }
-
-        .founder-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            margin: 1.5rem 0;
-        }
-
-        .founder {
-            text-align: left;
-        }
-
-        .founder h4 {
-            font-size: 1.15rem;
-            margin-bottom: 0.4rem;
-            color: #2F488E;
-        }
-
-        .founder p {
-            margin-bottom: 0.6rem;
-            line-height: 1.5;
-            color: #d0d0d0;
-            font-size: 0.9rem;
-        }
-
-        .stat-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1.5rem;
-            margin: 1.5rem 0;
-        }
-
-        .stat-card {
-            background: rgba(0, 102, 255, 0.03);
-            border: 1px solid rgba(0, 102, 255, 0.15);
-            border-radius: 8px;
-            padding: 1.8rem 1.5rem;
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 3rem;
-            font-weight: 300;
-            color: #2F488E;
-            margin-bottom: 0.6rem;
-            letter-spacing: -0.02em;
-        }
-
-        .stat-label {
-            font-size: 0.95rem;
-            color: #b0b5c8;
-            line-height: 1.5;
-        }
-
-        .comparison-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin: 1.5rem 0;
-            align-items: stretch;
-        }
-
-        .old-way, .new-way {
-            display: flex;
-            flex-direction: column;
-            border-radius: 8px;
-            padding: 1.5rem;
-        }
-
-        .old-way {
-            background: rgba(255, 60, 60, 0.04);
-            border: 1px solid rgba(255, 60, 60, 0.2);
-        }
-
-        .old-way h3 {
-            color: #ff6b6b;
-            margin-bottom: 0.5rem;
-            font-size: 1.15rem;
-        }
-
-        .old-way h4 {
-            color: #ff9999;
-            font-size: 0.85rem;
-            font-weight: 400;
-            margin-bottom: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .new-way {
-            background: rgba(0, 255, 136, 0.04);
-            border: 1px solid rgba(0, 255, 136, 0.2);
-        }
-
-        .new-way h3 {
-            color: #00ff88;
-            margin-bottom: 0.5rem;
-            font-size: 1.15rem;
-        }
-
-        .new-way h4 {
-            color: #66ffaa;
-            font-size: 0.85rem;
-            font-weight: 400;
-            margin-bottom: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .comparison-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .comparison-list {
-            font-size: 0.85rem;
-            line-height: 1.6;
-            margin-bottom: 1.2rem;
-            flex: 1;
-        }
-
-        .comparison-list p {
-            margin-bottom: 0.6rem;
-        }
-
-        .comparison-footer {
-            padding-top: 1rem;
-            border-top: 1px solid currentColor;
-            margin-top: auto;
-        }
-
-        .solution-hero {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .solution-statement {
-            font-size: 1.3rem;
-            line-height: 1.5;
-            color: #d8d8d8;
-            font-weight: 300;
-            margin-bottom: 1.5rem;
-        }
-
-        .solution-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-            margin: 1.5rem 0;
-        }
-
-        .solution-card {
-            background: rgba(0, 102, 255, 0.04);
-            border: 1px solid rgba(0, 102, 255, 0.2);
-            border-radius: 8px;
-            padding: 1.5rem 1.2rem;
-            text-align: center;
-        }
-
-        .solution-number {
-            display: inline-block;
-            width: 42px;
-            height: 42px;
-            line-height: 42px;
-            border-radius: 50%;
-            background: #2F488E;
-            color: #050510;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            font-size: 1.3rem;
-        }
-
-        .solution-card h4 {
-            color: #2F488E;
-            font-size: 1.1rem;
-            font-weight: 400;
-            margin-bottom: 0.8rem;
-        }
-
-        .solution-card p {
-            color: #b0b5c8;
-            line-height: 1.5;
-            font-size: 0.85rem;
-        }
-
-        .venn-container {
-            position: relative;
-            height: 250px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .venn-circle {
-            position: absolute;
-            width: 180px;
-            height: 180px;
-            border-radius: 50%;
-            border: 2px solid #2F488E;
-            background: rgba(0, 102, 255, 0.05);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.85rem;
-            color: #d0d0d0;
-            padding: 1rem;
-            text-align: center;
-        }
-
-        .venn-circle.left {
-            left: 30%;
-            transform: translateX(-50%);
-        }
-
-        .venn-circle.right {
-            right: 30%;
-            transform: translateX(50%);
-        }
-
-        .venn-label-external {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #2F488E;
-            font-weight: 600;
-            font-size: 1.5rem;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.3rem;
-        }
-
-        .venn-arrow {
-            font-size: 2rem;
-            color: #2F488E;
-        }
-
-        .phase-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1.2rem;
-            margin: 1.5rem 0;
-        }
-
-        .phase-card {
-            background: rgba(0, 102, 255, 0.03);
-            border: 1px solid rgba(0, 102, 255, 0.2);
-            border-radius: 8px;
-            padding: 1.2rem 1rem;
-        }
-
-        .phase-number {
-            display: inline-block;
-            width: 32px;
-            height: 32px;
-            line-height: 32px;
-            border-radius: 50%;
-            background: #2F488E;
-            color: #050510;
-            font-weight: 600;
-            margin-bottom: 0.6rem;
-            text-align: center;
-            font-size: 1rem;
-        }
-
-        .phase-card h4 {
-            color: #2F488E;
-            font-size: 0.95rem;
-            margin-bottom: 0.6rem;
-        }
-
-        .phase-card p {
-            font-size: 0.8rem;
-            line-height: 1.4;
-            color: #d0d0d0;
-            margin-bottom: 0.5rem;
-        }
-
-        .phase-metric {
-            margin-top: 0.6rem;
-            padding-top: 0.6rem;
-            border-top: 1px solid rgba(0, 102, 255, 0.2);
-            font-size: 0.75rem;
-            color: #00ff88;
-        }
-
-        .checkmark {
-            color: #00ff88;
-            font-weight: 600;
-        }
-
-        .teams-chat-container {
-            background: rgba(91, 95, 199, 0.08);
-            border: 2px solid #5b5fc7;
-            border-radius: 10px;
-            padding: 0.8rem;
-            max-width: 580px;
-            margin: 0.8rem auto;
-        }
-
-        .teams-header {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            margin-bottom: 0.6rem;
-            padding-bottom: 0.4rem;
-            border-bottom: 2px solid rgba(91, 95, 199, 0.3);
-        }
-
-        .teams-logo {
-            width: 18px;
-            height: 18px;
-            background: #5b5fc7;
-            border-radius: 3px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 0.55rem;
-        }
-
-        .teams-title {
-            color: #f5f5f5;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .chat-scroll-container {
-            background: #f5f5f5;
-            border-radius: 8px;
-            padding: 0.6rem;
-            height: 270px;
-            overflow-y: auto;
-            overflow-x: hidden;
-            scroll-behavior: smooth;
-        }
-
-        .chat-scroll-container::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .chat-scroll-container::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.05);
-            border-radius: 3px;
-        }
-
-        .chat-scroll-container::-webkit-scrollbar-thumb {
-            background: rgba(91, 95, 199, 0.3);
-            border-radius: 3px;
-        }
-
-        .chat-scroll-container::-webkit-scrollbar-thumb:hover {
-            background: rgba(91, 95, 199, 0.5);
-        }
-
-        .chat-message {
-            margin-bottom: 0.6rem;
-            opacity: 0;
-            animation: fadeInMessage 0.5s ease-out forwards;
-        }
-
-        .chat-message.delay-1 { animation-delay: 0.5s; }
-        .chat-message.delay-2 { animation-delay: 2.5s; }
-        .chat-message.delay-3 { animation-delay: 4.5s; }
-        .chat-message.delay-4 { animation-delay: 6.5s; }
-        .chat-message.delay-5 { animation-delay: 8.5s; }
-
-        .message-header {
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .message-avatar {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.55rem;
-            color: white;
-            font-weight: 700;
-        }
-
-        .avatar-bot {
-            background: #00B050;
-        }
-
-        .avatar-user {
-            background: #5b5fc7;
-        }
-
-        .message-name {
-            font-weight: 600;
-            color: #242424;
-            font-size: 0.65rem;
-        }
-
-        .message-bubble {
-            padding: 0.5rem;
-            border-radius: 6px;
-            font-size: 0.6rem;
-            line-height: 1.4;
-            margin-left: 22px;
-        }
-
-        .message-bot {
-            background: rgba(0, 176, 80, 0.15);
-            border: 1px solid rgba(0, 176, 80, 0.3);
-            color: #1a1a1a;
-        }
-
-        .message-user {
-            background: rgba(91, 95, 199, 0.2);
-            border: 1px solid rgba(91, 95, 199, 0.3);
-            color: #1a1a1a;
-        }
-
-        .progress-indicator {
-            position: fixed;
-            bottom: -50px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 0.5rem;
-            z-index: 100;
-            background: rgba(5, 5, 16, 0.95);
-            padding: 0.5rem 1rem;
-            border-radius: 20px 20px 0 0;
-            transition: bottom 0.3s ease;
-        }
-
-        .progress-indicator:hover {
-            bottom: 0;
-        }
-
-        body:hover .progress-indicator {
-            bottom: 0;
-        }
-
-        .progress-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: rgba(0, 102, 255, 0.4);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .progress-dot.active {
-            background: #2F488E;
-            transform: scale(1.5);
-        }
-
-        .progress-dot:hover {
-            background: #2F488E;
-        }
-
-        .slide-number {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-size: 0.85rem;
-            color: #7a7f95;
-            z-index: 100;
-        }
-
-        .nav-hint {
-            position: fixed;
-            bottom: 4.5rem;
-            right: 2rem;
-            font-family: ui-monospace, monospace;
-            font-size: 0.75rem;
-            color: #7a7f95;
-            opacity: 0.6;
-            background: rgba(5, 5, 16, 0.8);
-            padding: 0.5rem 0.8rem;
-            border-radius: 4px;
-        }
-
-        @keyframes fadeInMessage {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @media (max-width: 768px) {
-            section {
-                padding: 2rem 1.5rem 4rem 1.5rem;
-            }
-
-            .slide-content {
-                max-height: calc(100vh - 6rem);
-            }
-
-            h1 {
-                font-size: 2.2rem;
-            }
-
-            h2 {
-                font-size: 1.5rem;
-            }
-
-            .subtitle {
-                font-size: 1.1rem;
-            }
-
-            .two-col,
-            .founder-grid,
-            .stat-grid,
-            .comparison-container,
-            .solution-grid,
-            .phase-grid {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
-
-            .nav-hint {
-                display: none;
-            }
-
-            .source-citation {
-                bottom: -2.5rem;
-                font-size: 0.6rem;
-            }
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VÖRNTEC — Propuesta de Análisis</title>
+<meta name="description" content="Detección de fugas de gas en operaciones de oil & gas, sobre datos SCADA existentes." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:        #0f1730;
+  --bg-alt:    #162040;
+  --surface:   #1e2b4d;
+  --surface-2: #253a5e;
+  --line:      rgba(255,255,255,0.08);
+  --line-strong: rgba(255,255,255,0.18);
+
+  --text:      #ffffff;
+  --text-dim:  rgba(255,255,255,0.62);
+  --text-faint: rgba(255,255,255,0.38);
+
+  --blue:      #4a8fd4;
+  --blue-soft: rgba(74,143,212,0.12);
+  --green:     #2d9e5a;
+  --amber:     #e89c2d;
+  --red:       #d94444;
+
+  --mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+  --pad-x: clamp(40px, 7vw, 100px);
+  --pad-y: clamp(48px, 7vh, 90px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  overflow-y: scroll;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-weight: 400;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* Subtle film grain overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 200;
+  opacity: 0.022;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection { background: var(--blue); color: var(--text); }
+
+/* ─── Slide base ──────────────────────────────────────────── */
+.slide {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: var(--pad-y) var(--pad-x);
+  overflow: hidden;
+}
+
+/* Grid texture on every slide */
+.slide::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.slide-alt { background: var(--bg-alt); }
+.slide-alt::before { background-image: linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px); }
+
+.slide > * { position: relative; z-index: 1; }
+
+/* Slide chrome — top label (logo + section number) */
+.slide-chrome {
+  position: absolute;
+  top: var(--pad-y);
+  left: var(--pad-x);
+  right: var(--pad-x);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 5;
+}
+
+.chrome-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chrome-logo img {
+  height: 22px;
+  width: auto;
+  display: block;
+}
+
+.chrome-logo-fallback {
+  display: none;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  color: var(--text);
+}
+
+.chrome-divider {
+  color: var(--line-strong);
+  font-size: 14px;
+}
+
+.chrome-tag {
+  font-size: 10px;
+  color: var(--text-faint);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.chrome-num {
+  font-size: 10px;
+  color: var(--text-faint);
+  letter-spacing: 2px;
+}
+
+.chrome-num strong {
+  color: var(--blue);
+  font-weight: 700;
+}
+
+/* Slide content wrapper */
+.slide-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding-top: 32px;
+}
+
+/* ─── Nav dots (right side) ───────────────────────────────── */
+.nav-dots {
+  position: fixed;
+  right: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  z-index: 100;
+}
+
+.nav-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line-strong);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  padding: 0;
+  position: relative;
+}
+
+.nav-dot::before {
+  content: attr(data-label);
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background: rgba(15,23,48,0.95);
+  padding: 4px 10px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.nav-dot:hover::before {
+  opacity: 1;
+}
+
+.nav-dot:hover {
+  background: var(--blue);
+  transform: scale(1.4);
+}
+
+.nav-dot.active {
+  background: var(--blue);
+  width: 8px;
+  height: 24px;
+  border-radius: 4px;
+}
+
+/* Eyebrow label (section tag) */
+.eyebrow {
+  font-size: 10px;
+  color: var(--blue);
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.eyebrow::before {
+  content: '';
+  width: 32px;
+  height: 1px;
+  background: var(--blue);
+}
+
+.eyebrow-center {
+  justify-content: center;
+}
+.eyebrow-center::before {
+  display: none;
+}
+.eyebrow-center::after {
+  display: none;
+}
+
+/* Display heading */
+.h-display {
+  font-size: clamp(32px, 4.4vw, 60px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  margin-bottom: 24px;
+}
+
+.h-display .accent {
+  color: var(--blue);
+}
+
+.h-display .light {
+  font-weight: 300;
+  color: var(--text-dim);
+}
+
+.h-medium {
+  font-size: clamp(24px, 3vw, 40px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 20px;
+}
+
+.h-medium .accent { color: var(--blue); }
+.h-medium .light { font-weight: 300; color: var(--text-dim); }
+
+.lead {
+  font-size: clamp(13px, 1vw, 15px);
+  color: var(--text-dim);
+  line-height: 1.65;
+  max-width: 640px;
+  margin-bottom: 40px;
+  font-weight: 400;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* SLIDE 01 — HERO                                              */
+/* ═══════════════════════════════════════════════════════════ */
+.hero .slide-body {
+  flex-direction: row;
+  align-items: center;
+  gap: 60px;
+}
+
+@media (max-width: 900px) {
+  .hero .slide-body {
+    flex-direction: column;
+    gap: 32px;
+    align-items: flex-start;
+  }
+}
+
+.hero-main {
+  flex: 1.6;
+  min-width: 0;
+}
+
+.hero-side {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  border-left: 1px solid var(--line);
+  padding-left: 36px;
+}
+
+@media (max-width: 900px) {
+  .hero-side {
+    border-left: none;
+    border-top: 1px solid var(--line);
+    padding-left: 0;
+    padding-top: 32px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 32px;
+  }
+}
+
+.hero-eyebrow {
+  font-size: 11px;
+  color: var(--blue);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 28px;
+}
+
+.hero h1 {
+  font-size: clamp(36px, 5.2vw, 68px);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin-bottom: 28px;
+}
+
+.hero h1 .accent { color: var(--blue); }
+.hero h1 .light { font-weight: 300; color: var(--text-dim); }
+
+.hero-sub {
+  font-size: clamp(13px, 1vw, 15px);
+  color: var(--text-dim);
+  max-width: 560px;
+  line-height: 1.65;
+  font-weight: 400;
+}
+
+.hero-stat {
+  min-width: 160px;
+}
+
+.hero-stat-label {
+  font-size: 9px;
+  color: var(--text-faint);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.hero-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.hero-stat-value .accent { color: var(--blue); }
+
+.hero-date {
+  position: absolute;
+  bottom: var(--pad-y);
+  right: var(--pad-x);
+  font-size: 10px;
+  color: var(--text-faint);
+  letter-spacing: 1px;
+  text-align: right;
+  z-index: 5;
+}
+
+.scroll-cue {
+  position: absolute;
+  bottom: var(--pad-y);
+  left: var(--pad-x);
+  font-size: 9px;
+  color: var(--text-faint);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 5;
+  animation: scrollCue 3s ease-in-out infinite;
+}
+
+.scroll-cue::after {
+  content: '';
+  width: 1px;
+  height: 28px;
+  background: linear-gradient(180deg, var(--blue), transparent);
+}
+
+@keyframes scrollCue {
+  0%, 100% { opacity: 0.4; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(4px); }
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* SLIDE 02 — LA PREGUNTA                                       */
+/* ═══════════════════════════════════════════════════════════ */
+.pregunta .slide-body {
+  align-items: center;
+  text-align: center;
+}
+
+.pregunta::after {
+  content: '?';
+  position: absolute;
+  font-size: clamp(400px, 65vw, 900px);
+  color: rgba(74,143,212,0.025);
+  font-weight: 200;
+  line-height: 0.7;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -42%);
+  pointer-events: none;
+  user-select: none;
+  font-family: var(--mono);
+  z-index: 0;
+}
+
+.pregunta-inner {
+  max-width: 1000px;
+  position: relative;
+  z-index: 1;
+}
+
+.pregunta-eyebrow {
+  font-size: 11px;
+  color: var(--blue);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 56px;
+}
+
+.pregunta h2 {
+  font-size: clamp(28px, 4.5vw, 56px);
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+}
+
+.pregunta h2 .accent { color: var(--blue); }
+.pregunta h2 .light { font-weight: 300; color: var(--text-dim); }
+
+.pregunta-mark {
+  font-size: 10px;
+  color: var(--text-faint);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 64px;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* SLIDE 03 — CÓMO FUNCIONA                                     */
+/* ═══════════════════════════════════════════════════════════ */
+.como .slide-body {
+  flex-direction: row;
+  gap: 64px;
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .como .slide-body {
+    flex-direction: column;
+    gap: 36px;
+  }
+}
+
+.como-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.como-right {
+  flex: 1.1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.demo-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 26px;
+  background: var(--text);
+  color: var(--bg);
+  border-radius: 4px;
+  text-decoration: none;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  border: 1px solid var(--text);
+  align-self: flex-start;
+}
+
+.demo-cta:hover {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: var(--text);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(74,143,212,0.25);
+}
+
+.demo-cta-arrow {
+  font-size: 14px;
+  transition: transform 0.3s ease;
+}
+
+.demo-cta:hover .demo-cta-arrow {
+  transform: translateX(4px);
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 20px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+  align-items: start;
+}
+
+.step:last-child { border-bottom: none; }
+
+.step-num {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--blue);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.step-content h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.step-content p {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* SLIDE 04 — LO QUE NECESITAMOS                                */
+/* ═══════════════════════════════════════════════════════════ */
+.necesitamos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 12px;
+}
+
+@media (max-width: 768px) {
+  .necesitamos-grid { grid-template-columns: 1fr; }
+}
+
+.nec-col {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 28px 26px;
+}
+
+.nec-col-yes { border-left: 3px solid var(--green); }
+.nec-col-no { border-left: 3px solid var(--text-faint); opacity: 0.88; }
+
+.nec-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.nec-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.nec-col-yes .nec-icon {
+  background: rgba(45,158,90,0.15);
+  color: var(--green);
+  border: 1px solid rgba(45,158,90,0.3);
+}
+
+.nec-col-no .nec-icon {
+  background: rgba(255,255,255,0.05);
+  color: var(--text-faint);
+  border: 1px solid var(--line-strong);
+}
+
+.nec-title {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.nec-col-yes .nec-title { color: var(--green); }
+.nec-col-no .nec-title { color: var(--text-faint); }
+
+.nec-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.nec-list li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.nec-col-no .nec-list li { color: var(--text-dim); }
+
+.nec-list .marker {
+  font-size: 12px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  font-weight: 700;
+}
+
+.nec-col-yes .marker { color: var(--green); }
+.nec-col-no .marker { color: var(--text-faint); }
+
+.nec-list .label {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.nec-list .detail {
+  display: block;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-weight: 400;
+  margin-top: 3px;
+  line-height: 1.5;
+}
+
+.nec-footnote {
+  margin-top: 28px;
+  padding: 16px 22px;
+  background: rgba(74,143,212,0.06);
+  border-left: 2px solid var(--blue);
+  border-radius: 0 4px 4px 0;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.65;
+  max-width: 880px;
+}
+
+.nec-footnote strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* New: single-column requirement list */
+.necesitamos-single {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 880px;
+}
+
+.nec-item {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--green);
+  border-radius: 6px;
+  padding: 22px 28px;
+  align-items: start;
+  transition: all 0.3s ease;
+}
+
+.nec-item:hover {
+  border-color: var(--line-strong);
+  border-left-color: var(--green);
+  transform: translateX(2px);
+}
+
+.nec-item-num {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--blue);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  padding-top: 2px;
+}
+
+.nec-item-content {
+  min-width: 0;
+}
+
+.nec-item-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.nec-item-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.005em;
+}
+
+.nec-item-required {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background: rgba(45,158,90,0.12);
+  border: 1px solid rgba(45,158,90,0.3);
+  padding: 3px 9px;
+  border-radius: 3px;
+}
+
+.nec-item-optional {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-faint);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--line-strong);
+  padding: 3px 9px;
+  border-radius: 3px;
+}
+
+.nec-item-desc {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.nec-item-desc strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* SLIDE 05 — TIMELINE PROPUESTA                                */
+/* ═══════════════════════════════════════════════════════════ */
+.timeline {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  position: relative;
+  margin-top: 24px;
+}
+
+@media (max-width: 768px) {
+  .timeline { grid-template-columns: 1fr; gap: 28px; }
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 30px;
+  left: 12%;
+  right: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--line-strong), var(--line-strong), transparent);
+  z-index: 0;
+}
+
+@media (max-width: 768px) {
+  .timeline::before { display: none; }
+}
+
+.tl-step {
+  position: relative;
+  z-index: 1;
+}
+
+.tl-marker {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--blue);
+  margin-bottom: 24px;
+  letter-spacing: -0.02em;
+}
+
+.tl-step:nth-child(2) .tl-marker {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 6px rgba(74,143,212,0.08);
+}
+
+.tl-step:last-child .tl-marker {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.tl-label {
+  font-size: 9px;
+  color: var(--text-faint);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.tl-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+  margin-bottom: 12px;
+  letter-spacing: -0.005em;
+}
+
+.tl-desc {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.tl-meta {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 10px;
+  color: var(--blue);
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* SLIDE 06 — COSTO CERO                                        */
+/* ═══════════════════════════════════════════════════════════ */
+.costo .slide-body {
+  align-items: center;
+  text-align: center;
+}
+
+.costo-eyebrow {
+  font-size: 11px;
+  color: var(--blue);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  justify-content: center;
+}
+
+.costo-eyebrow::before,
+.costo-eyebrow::after {
+  content: '';
+  width: 32px;
+  height: 1px;
+  background: var(--blue);
+}
+
+.costo h2 {
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  margin-bottom: 56px;
+  max-width: 800px;
+}
+
+.costo h2 .accent { color: var(--blue); }
+.costo h2 .light { font-weight: 300; color: var(--text-dim); }
+
+.cost-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  width: 100%;
+  max-width: 880px;
+}
+
+@media (max-width: 768px) {
+  .cost-grid { grid-template-columns: 1fr; }
+}
+
+.cost-card {
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
+  border: 1px solid rgba(45,158,90,0.3);
+  border-radius: 8px;
+  padding: 48px 36px;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+.cost-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--green);
+}
+
+.cost-num {
+  font-size: clamp(80px, 12vw, 140px);
+  font-weight: 800;
+  color: var(--green);
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  margin-bottom: 20px;
+}
+
+.cost-label-eyebrow {
+  font-size: 9px;
+  color: var(--text-faint);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.cost-label-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.costo-foot {
+  margin-top: 56px;
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 0.3px;
+  max-width: 540px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.costo-foot strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* SLIDE 07 — BACKERS                                           */
+/* ═══════════════════════════════════════════════════════════ */
+.backers .slide-body {
+  align-items: center;
+  text-align: center;
+}
+
+.backers h2 {
+  text-align: center;
+  margin-bottom: 16px;
+  max-width: 800px;
+}
+
+.backers-sub {
+  text-align: center;
+  margin: 0 auto 56px;
+  max-width: 560px;
+}
+
+.backers-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  width: 100%;
+  max-width: 980px;
+}
+
+@media (max-width: 768px) {
+  .backers-grid { grid-template-columns: 1fr; gap: 18px; }
+}
+
+.backer {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.backer:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+}
+
+.backer-logo {
+  width: 100%;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.97);
+  border-radius: 5px;
+  padding: 12px 18px;
+}
+
+.backer-logo img {
+  max-height: 100%;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.backer-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.005em;
+}
+
+.backer-desc {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.55;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* SLIDE 08 — FAQ                                               */
+/* ═══════════════════════════════════════════════════════════ */
+.faq h2 { margin-bottom: 12px; }
+.faq .lead { margin-bottom: 28px; }
+
+.faq-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .faq-grid { grid-template-columns: 1fr; }
+}
+
+.faq-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  text-align: left;
+  font-family: var(--mono);
+}
+
+.faq-card:hover {
+  border-color: var(--blue);
+  background: var(--surface-2);
+  transform: translateY(-1px);
+}
+
+.faq-card-num {
+  font-size: 10px;
+  color: var(--blue);
+  letter-spacing: 1px;
+  font-weight: 700;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.faq-card-q {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.faq-card-toggle {
+  font-size: 18px;
+  color: var(--blue);
+  font-weight: 300;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* Modal for FAQ answers */
+.faq-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,48,0.85);
+  backdrop-filter: blur(8px);
+  z-index: 300;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+.faq-modal.open { display: flex; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.faq-modal-content {
+  background: var(--bg-alt);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 40px 44px;
+  position: relative;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.faq-modal-num {
+  font-size: 10px;
+  color: var(--blue);
+  letter-spacing: 2px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.faq-modal-q {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  margin-bottom: 24px;
+  padding-right: 32px;
+}
+
+.faq-modal-a {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+.faq-modal-a p + p {
+  margin-top: 14px;
+}
+
+.faq-modal-a strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.faq-modal-a em {
+  color: var(--blue);
+  font-style: normal;
+  font-weight: 600;
+}
+
+.faq-modal-close {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  color: var(--text-dim);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-weight: 300;
+  transition: all 0.2s ease;
+}
+
+.faq-modal-close:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* SLIDE 09 — HABLEMOS                                          */
+/* ═══════════════════════════════════════════════════════════ */
+.hablemos .slide-body {
+  align-items: center;
+  text-align: center;
+}
+
+.hablemos::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 70vw;
+  height: 70vw;
+  max-width: 800px;
+  max-height: 800px;
+  background: radial-gradient(circle, rgba(74,143,212,0.06) 0%, transparent 60%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hablemos-inner {
+  max-width: 880px;
+  position: relative;
+  z-index: 1;
+}
+
+.hablemos-eyebrow {
+  font-size: 11px;
+  color: var(--blue);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  justify-content: center;
+}
+
+.hablemos-eyebrow::before,
+.hablemos-eyebrow::after {
+  content: '';
+  width: 32px;
+  height: 1px;
+  background: var(--blue);
+}
+
+.hablemos h2 {
+  font-size: clamp(36px, 5.5vw, 72px);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin-bottom: 48px;
+}
+
+.hablemos h2 .accent { color: var(--blue); }
+.hablemos h2 .light { font-weight: 300; color: var(--text-dim); }
+
+.hablemos-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 40px;
+  background: var(--text);
+  color: var(--bg);
+  border-radius: 4px;
+  text-decoration: none;
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  border: 1px solid var(--text);
+  margin-bottom: 64px;
+}
+
+.hablemos-cta:hover {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: var(--text);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(74,143,212,0.3);
+}
+
+.hablemos-cta-arrow {
+  font-size: 16px;
+  transition: transform 0.3s ease;
+}
+
+.hablemos-cta:hover .hablemos-cta-arrow {
+  transform: translateX(4px);
+}
+
+.hablemos-meta {
+  display: flex;
+  justify-content: center;
+  gap: 60px;
+  flex-wrap: wrap;
+  padding-top: 40px;
+  border-top: 1px solid var(--line);
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.hablemos-loc {
+  font-size: 10px;
+  color: var(--text-faint);
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+.hablemos-loc strong {
+  display: block;
+  color: var(--text-dim);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.hablemos-foot {
+  position: absolute;
+  bottom: var(--pad-y);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: var(--text-faint);
+  letter-spacing: 1px;
+  text-align: center;
+  z-index: 5;
+  white-space: nowrap;
+}
+
+/* ─── Animations on slide entry ──────────────────────────── */
+.fade-up {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fade-up.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.slide.active .fade-up:nth-child(1) { transition-delay: 0.05s; }
+.slide.active .fade-up:nth-child(2) { transition-delay: 0.15s; }
+.slide.active .fade-up:nth-child(3) { transition-delay: 0.25s; }
+.slide.active .fade-up:nth-child(4) { transition-delay: 0.35s; }
+.slide.active .fade-up:nth-child(5) { transition-delay: 0.45s; }
+.slide.active .fade-up:nth-child(6) { transition-delay: 0.55s; }
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+  .nav-dots { right: 14px; }
+  .hero-date { right: 24px; bottom: 24px; font-size: 9px; }
+  .scroll-cue { left: 24px; bottom: 24px; }
+  .slide-chrome { top: 24px; left: 24px; right: 24px; }
+}
+</style>
 </head>
 <body>
-    <div class="deck-container">
-<!-- Slide 1: Title -->
-<section class="active" data-slide="1">
-    <div class="slide-content" style="text-align: center; max-width: 800px; margin: 0 auto; justify-content: center;">
-        <div>
-            <img src="images/vorntec.png" alt="VORNTEC" class="logo">
-            <h1><span class="accent">The ChatGPT of Gas Leaks</span></h1>
-            <p class="subtitle">Science-backed methane leak prediction using data companies already have.</p>
-            <p style="font-size: 0.9rem; color: #7a7f95; margin-top: 2rem; font-family: ui-monospace, monospace;">November 2025</p>
-        </div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- NAV DOTS                                                     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<nav class="nav-dots">
+  <button class="nav-dot active" data-slide="0" data-label="Inicio"></button>
+  <button class="nav-dot" data-slide="1" data-label="Pregunta"></button>
+  <button class="nav-dot" data-slide="2" data-label="Cómo funciona"></button>
+  <button class="nav-dot" data-slide="3" data-label="Datos"></button>
+  <button class="nav-dot" data-slide="4" data-label="Propuesta"></button>
+  <button class="nav-dot" data-slide="5" data-label="Costo cero"></button>
+  <button class="nav-dot" data-slide="6" data-label="Backers"></button>
+  <button class="nav-dot" data-slide="7" data-label="FAQ"></button>
+  <button class="nav-dot" data-slide="8" data-label="Hablemos"></button>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 01 — HERO                                                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide hero" id="s0">
+  <div class="slide-chrome">
+    <div class="chrome-logo">
+      <img src="vorntec.png" alt="VÖRNTEC" onerror="this.style.display='none';this.nextElementSibling.style.display='inline';" />
+      <span class="chrome-logo-fallback">VÖRNTEC</span>
+      <span class="chrome-divider">|</span>
+      <span class="chrome-tag">Propuesta de Análisis</span>
     </div>
+    <div class="chrome-num"><strong>01</strong> / 09</div>
+  </div>
+
+  <div class="slide-body">
+    <div class="hero-main">
+      <div class="hero-eyebrow fade-up">— Detección de Fugas de Gas</div>
+      <h1 class="fade-up">
+        Detección de fugas de gas <span class="accent">en operaciones</span> <span class="light">de oil &amp; gas</span>, sobre datos SCADA existentes.
+      </h1>
+      <p class="hero-sub fade-up">
+        Sin hardware nuevo. Sin acceso a sistemas. Sin requerimiento de tiempo del equipo.
+        Identificación de anomalías que los umbrales fijos no detectan, antes de que
+        escalen a fallas graves.
+      </p>
+    </div>
+
+    <div class="hero-side fade-up">
+      <div class="hero-stat">
+        <div class="hero-stat-label">Validado sobre</div>
+        <div class="hero-stat-value">Petrobras 3W</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-label">Observaciones</div>
+        <div class="hero-stat-value">32.8<span class="accent">M</span></div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-label">Pozos reales</div>
+        <div class="hero-stat-value">1,119</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-cue">scroll</div>
+  <div class="hero-date">31 / Marzo / 2026<br/>vorntec.com</div>
 </section>
 
-        <!-- Slide 2: Climate Problem -->
-        <section data-slide="2">
-            <div class="slide-content">
-                <h2>The Climate Impact: Why Methane Matters in Oil & Gas Operations</h2>
-                
-                <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                    <div class="stat-grid">
-                        <div class="stat-card">
-                            <div class="stat-number">86×</div>
-                            <div class="stat-label">Methane's warming impact over 20 years. Our most powerful short-term climate lever. <span class="source-icon">¹</span><br><span style="font-size: 0.85rem; color: #7a7f95; margin-top: 0.3rem; display: inline-block;">Methane's warming impact (GWP20, CO₂e)</span></div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number">~12 years</div>
-                            <div class="stat-label">in the atmosphere <span class="source-icon">²</span><br><span style="font-size: 0.85rem; color: #7a7f95; margin-top: 0.3rem; display: inline-block;">Fastest pathway to cutting CO₂e impact.</span></div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number">95%</div>
-                            <div class="stat-label">of natural gas is methane (CH₄) <span class="source-icon">³</span></div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number">17%</div>
-                            <div class="stat-label">of global anthropogenic methane emissions come from Oil & Gas <span class="source-icon">⁴</span></div>
-                        </div>
-                    </div>
-                    <!--      
-                    <p style="margin-top: 1.5rem; font-size: 1.05rem; color: #b0b5c8; text-align: center; line-height: 1.6;">
-                        Current detection methods are expensive, fragmented, and unreliable at scale.
-                    </p>
-                -->
-                </div>
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 02 — LA PREGUNTA                                             -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide pregunta slide-alt" id="s1">
+  <div class="slide-chrome">
+    <div class="chrome-logo">
+      <img src="vorntec.png" alt="VÖRNTEC" onerror="this.style.display='none';this.nextElementSibling.style.display='inline';" />
+      <span class="chrome-logo-fallback">VÖRNTEC</span>
+      <span class="chrome-divider">|</span>
+      <span class="chrome-tag">Una pregunta</span>
+    </div>
+    <div class="chrome-num"><strong>02</strong> / 09</div>
+  </div>
 
-                <div class="source-citation">
-                    ¹ IPCC AR6 | ² NOAA Earth System Research Lab | ³ EIA Natural Gas Composition | ⁴ IEA Methane Tracker 2023
-                </div>
-            </div>
-        </section>
+  <div class="slide-body">
+    <div class="pregunta-inner">
+      <div class="pregunta-eyebrow fade-up">— 02 / Una pregunta</div>
+      <h2 class="fade-up">
+        ¿Cómo realizan actualmente sus programas de
+        <span class="accent">detección y reparación de fugas</span>
+        <span class="light">(LDAR)?</span>
+      </h2>
+      <div class="pregunta-mark fade-up">— Hablemos sobre eso</div>
+    </div>
+  </div>
+</section>
 
-        <!-- Slide 3: Operator Economics -->
-        <section data-slide="3">
-            <div class="slide-content">
-                <h2>The Cost Impact: Expensive Losses from Invisible Leaks</h2>
-                
-                <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                    <div class="stat-grid">
-                        <div class="stat-card">
-                            <div class="stat-number">~£30M</div>
-                            <div class="stat-label">Estimated annual loss per mid and upstream operator from methane leaks (production losses up to 6%)</span></div>
-                        </div>
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 03 — CÓMO FUNCIONA                                           -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide como" id="s2">
+  <div class="slide-chrome">
+    <div class="chrome-logo">
+      <img src="vorntec.png" alt="VÖRNTEC" onerror="this.style.display='none';this.nextElementSibling.style.display='inline';" />
+      <span class="chrome-logo-fallback">VÖRNTEC</span>
+      <span class="chrome-divider">|</span>
+      <span class="chrome-tag">Cómo funciona</span>
+    </div>
+    <div class="chrome-num"><strong>03</strong> / 09</div>
+  </div>
 
-                        <div class="stat-card">
-                            <div class="stat-number">~3000</div>
-                            <div class="stat-label">Mid-size operators globally (£0.5-20B revenue) facing ESG pressure and regulatory requirements <span class="source-icon">⁵</div>
-                        </div>
-                    </div>
+  <div class="slide-body">
+    <div class="como-left">
+      <div class="eyebrow fade-up">03 / Cómo funciona</div>
+      <h2 class="h-display fade-up">
+        Un pipeline que <span class="accent">funciona sobre</span> <span class="light">los datos existentes.</span>
+      </h2>
+      <p class="lead fade-up">
+        No reemplaza el SCADA. No requiere sensores nuevos. Lee la telemetría
+        existente, identifica patrones que los umbrales fijos no detectan, y
+        envía notificaciones a través de los canales corporativos en uso.
+      </p>
+      <a href="https://demov3.2.vorntec.com/" class="demo-cta fade-up" target="_blank" rel="noopener">
+        Ver demo interactivo
+        <span class="demo-cta-arrow">→</span>
+      </a>
+    </div>
 
-                    <div class="highlight-box" style="margin-top: 2rem;">
-                        Operators lose money and reputation while contributing negatively to climate change, and current solutions don't scale to catch every leak.
-                    </div>
-                </div>
+    <div class="como-right">
+      <div class="steps">
+        <div class="step fade-up">
+          <div class="step-num">01</div>
+          <div class="step-content">
+            <h3>Telemetría SCADA</h3>
+            <p>Series temporales de presión, temperatura, caudal y apertura de válvulas — exportadas en CSV.</p>
+          </div>
+        </div>
+        <div class="step fade-up">
+          <div class="step-num">02</div>
+          <div class="step-content">
+            <h3>Pipeline en cascada</h3>
+            <p>Tres capas: baseline estadístico → ML no supervisado → clasificación supervisada. Precisión sin sacrificar recall.</p>
+          </div>
+        </div>
+        <div class="step fade-up">
+          <div class="step-num">03</div>
+          <div class="step-content">
+            <h3>Detección anticipada</h3>
+            <p>Detección de precursores de fugas hasta 24 minutos antes que un umbral fijo, sobre la firma combinada de varios sensores.</p>
+          </div>
+        </div>
+        <div class="step fade-up">
+          <div class="step-num">04</div>
+          <div class="step-content">
+            <h3>Alerta + orden de trabajo</h3>
+            <p>Notificación vía Microsoft Teams o Slack, y creación de OT en SAP PM, IBM Maximo o cualquier CMMS con API REST.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
-                <div class="source-citation">
-                    ⁵ IBISWorld, S&P Global, Urgewald GOGEL, IEA
-                </div>
-            </div>
-        </section>
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 04 — LO QUE NECESITAMOS                                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide necesitamos slide-alt" id="s3">
+  <div class="slide-chrome">
+    <div class="chrome-logo">
+      <img src="vorntec.png" alt="VÖRNTEC" onerror="this.style.display='none';this.nextElementSibling.style.display='inline';" />
+      <span class="chrome-logo-fallback">VÖRNTEC</span>
+      <span class="chrome-divider">|</span>
+      <span class="chrome-tag">Lo necesario</span>
+    </div>
+    <div class="chrome-num"><strong>04</strong> / 09</div>
+  </div>
 
-<!-- Slide 4: Why Now -->
-<section data-slide="4">
-    <div class="slide-content">
-        <h2>Why Now: The Perfect Convergence</h2>
-        
-        <div class="two-col" style="align-items: center; flex: 1;">
-            <div>
-                <div class="text-block">
-                    <h3 style="color: #2F488E;">Energy Transition</h3>
-                    <p style="font-size: 0.95rem; line-height: 1.6; color: #d0d0d0; margin-bottom: 2.5rem;">
-                        Natural gas is the bridge fuel. Operators face rising pressure to cut methane quickly — every molecule saved reduces emissions and increases revenue.
-                    </p>
-                </div>
+  <div class="slide-body">
+    <div class="eyebrow fade-up">04 / Lo necesario</div>
+    <h2 class="h-display fade-up">
+      Datos en CSV. <span class="light">Nada más.</span>
+    </h2>
+    <p class="lead fade-up">
+      Con un export del historian, alcanza para iniciar el análisis. Sin formato
+      específico, sin pre-procesamiento, sin acceso a sistemas internos.
+    </p>
 
-                <div class="text-block">
-                    <h3 style="color: #2F488E;">Tech Maturity</h3>
-                    <p style="font-size: 0.95rem; line-height: 1.6; color: #d0d0d0;">
-                        Cloud infrastructure, cheap compute, and scalable AI tooling have reached full maturity. Data centers, GPUs, and edge integration now make predictive emissions AI fast, affordable, and reliable.
-                    </p>
-                </div>
-            </div>
+    <div class="necesitamos-single fade-up">
+      <div class="nec-item">
+        <div class="nec-item-num">01</div>
+        <div class="nec-item-content">
+          <div class="nec-item-header">
+            <span class="nec-item-title">Datos de sensores de la operación</span>
+            <span class="nec-item-required">REQUERIDO</span>
+          </div>
+          <p class="nec-item-desc">
+            Series temporales de presión, temperatura y caudal — al menos
+            <strong>3 meses de historia</strong>. Cualquier sub-conjunto de la operación
+            es suficiente para iniciar.
+          </p>
+        </div>
+      </div>
 
-            <div>
-                <div class="venn-container">
-                    <div style="position: absolute; left: 37%; transform: translateX(-50%); width: 200px; height: 200px; border-radius: 50%; border: 2px solid #2F488E; background: rgba(0, 102, 255, 0.05); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; color: #d0d0d0; padding: 1rem; text-align: center;">
-                        Energy<br>Transition
-                    </div>
-                    <div style="position: absolute; right: 37%; transform: translateX(50%); width: 200px; height: 200px; border-radius: 50%; border: 2px solid #2F488E; background: rgba(0, 102, 255, 0.05); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; color: #d0d0d0; padding: 1rem; text-align: center;">
-                        Industry<br>Consolidation
-                    </div>
-                    <div style="position: absolute; top: 5%; left: 50%; transform: translate(-50%, -50%); z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
-                        <img src="images/vorntec.png" alt="VORNTEC" style="max-height: 40px; opacity: 1; filter: none;">
-                        <div style="
-    width: 2px;
-    height: 120px; 
-    background: #FFFFFF; 
-    margin: 0 auto;
-    position: relative;
-">
-    <div style="
-        width: 0; 
-        height: 0; 
-        border-left: 8px solid transparent; 
-        border-right: 8px solid transparent; 
-        border-top: 12px solid #FFFFFF;
-        position: absolute;
-        bottom: -12px;
-        left: 50%;
-        transform: translateX(-50%);
-    "></div>
+      <div class="nec-item">
+        <div class="nec-item-num">02</div>
+        <div class="nec-item-content">
+          <div class="nec-item-header">
+            <span class="nec-item-title">Estado de las válvulas</span>
+            <span class="nec-item-optional">OPCIONAL</span>
+          </div>
+          <p class="nec-item-desc">
+            Si está disponible, en un CSV aparte. Permite enriquecer el análisis
+            de transitorios y eventos operacionales.
+          </p>
+        </div>
+      </div>
+
+      <div class="nec-item">
+        <div class="nec-item-num">03</div>
+        <div class="nec-item-content">
+          <div class="nec-item-header">
+            <span class="nec-item-title">Registro de fallas históricas</span>
+            <span class="nec-item-optional">OPCIONAL</span>
+          </div>
+          <p class="nec-item-desc">
+            Cualquier formato — fechas, descripciones, reportes de mantenimiento.
+            No es necesario que estén estructuradas o etiquetadas.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="nec-footnote fade-up">
+      <strong>El sistema funciona sin etiquetas desde el día uno.</strong>
+      La capa principal es no supervisada — aprende qué es operación normal
+      a partir de los datos compartidos y detecta cualquier desviación significativa.
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 05 — LA PROPUESTA · TIMELINE                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide propuesta" id="s4">
+  <div class="slide-chrome">
+    <div class="chrome-logo">
+      <img src="vorntec.png" alt="VÖRNTEC" onerror="this.style.display='none';this.nextElementSibling.style.display='inline';" />
+      <span class="chrome-logo-fallback">VÖRNTEC</span>
+      <span class="chrome-divider">|</span>
+      <span class="chrome-tag">La propuesta</span>
+    </div>
+    <div class="chrome-num"><strong>05</strong> / 09</div>
+  </div>
+
+  <div class="slide-body">
+    <div class="eyebrow fade-up">05 / La propuesta</div>
+    <h2 class="h-display fade-up">
+      Análisis <span class="accent">sin compromiso</span><span class="light">, en tres pasos.</span>
+    </h2>
+    <p class="lead fade-up">
+      Los datos se comparten. Se procesan en nuestra infraestructura.
+      Se presentan los resultados. La decisión de avanzar queda del lado del cliente.
+    </p>
+
+    <div class="timeline fade-up">
+      <div class="tl-step">
+        <div class="tl-marker">i</div>
+        <div class="tl-label">PASO 01 · Día 0</div>
+        <h3 class="tl-title">Compartir los datos</h3>
+        <p class="tl-desc">
+          Export del historian en CSV. Sin formato específico. Sin acceso
+          a la red interna. Sin requerimiento del equipo de IT.
+        </p>
+      </div>
+
+      <div class="tl-step">
+        <div class="tl-marker">ii</div>
+        <div class="tl-label">PASO 02 · 3 meses</div>
+        <h3 class="tl-title">Procesamiento en nuestra infraestructura</h3>
+        <p class="tl-desc">
+          EDA, ingeniería de features y ejecución del pipeline completo
+          de detección. Sin intervención del lado del cliente.
+        </p>
+        <div class="tl-meta">→ Cero recursos del cliente</div>
+      </div>
+
+      <div class="tl-step">
+        <div class="tl-marker">iii</div>
+        <div class="tl-label">PASO 03 · Decisión</div>
+        <h3 class="tl-title">Presentación de resultados</h3>
+        <p class="tl-desc">
+          Informe ejecutivo con hallazgos, anomalías detectadas y casos
+          específicos. La decisión de avanzar con un piloto queda del lado del cliente.
+        </p>
+        <div class="tl-meta">→ Sin compromiso</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 06 — COSTO CERO                                              -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide costo slide-alt" id="s5">
+  <div class="slide-chrome">
+    <div class="chrome-logo">
+      <img src="vorntec.png" alt="VÖRNTEC" onerror="this.style.display='none';this.nextElementSibling.style.display='inline';" />
+      <span class="chrome-logo-fallback">VÖRNTEC</span>
+      <span class="chrome-divider">|</span>
+      <span class="chrome-tag">El compromiso</span>
+    </div>
+    <div class="chrome-num"><strong>06</strong> / 09</div>
+  </div>
+
+  <div class="slide-body">
+    <div class="costo-eyebrow fade-up">06 / El compromiso</div>
+    <h2 class="fade-up">
+      Para <span class="accent">iniciar</span> el análisis.
+    </h2>
+
+    <div class="cost-grid fade-up">
+      <div class="cost-card">
+        <div class="cost-num">$0</div>
+        <div class="cost-label-eyebrow">COSTO</div>
+        <div class="cost-label-text">El análisis completo es gratuito.</div>
+      </div>
+      <div class="cost-card">
+        <div class="cost-num">0</div>
+        <div class="cost-label-eyebrow">RECURSOS REQUERIDOS</div>
+        <div class="cost-label-text">Solo se requieren los archivos CSV.</div>
+      </div>
+    </div>
+
+    <p class="costo-foot fade-up">
+      Sin contratos previos. Sin condiciones ocultas. <strong>El análisis es gratuito
+      y sin compromiso.</strong> La decisión de avanzar con un piloto productivo
+      queda del lado del cliente.
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 07 — BACKERS                                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide backers" id="s6">
+  <div class="slide-chrome">
+    <div class="chrome-logo">
+      <img src="vorntec.png" alt="VÖRNTEC" onerror="this.style.display='none';this.nextElementSibling.style.display='inline';" />
+      <span class="chrome-logo-fallback">VÖRNTEC</span>
+      <span class="chrome-divider">|</span>
+      <span class="chrome-tag">Quiénes están detrás</span>
+    </div>
+    <div class="chrome-num"><strong>07</strong> / 09</div>
+  </div>
+
+  <div class="slide-body">
+    <div class="eyebrow eyebrow-center fade-up" style="justify-content:center">07 / Quiénes están detrás</div>
+    <h2 class="h-display fade-up">
+      Respaldados por <span class="accent">quienes apuestan</span> <span class="light">a tecnología real.</span>
+    </h2>
+    <p class="lead backers-sub fade-up">
+      VÖRNTEC es parte de programas de aceleración e inversión enfocados en
+      tecnología climática y empresas de inteligencia artificial.
+    </p>
+
+    <div class="backers-grid fade-up">
+      <div class="backer">
+        <div class="backer-logo">
+          <img src="bgv.png" alt="Bethnal Green Ventures" onerror="this.style.display='none';this.parentElement.innerHTML='<div style=&quot;font-size:16px;color:#162040;font-weight:700;letter-spacing:1px;&quot;>BGV</div>';" />
+        </div>
+        <div class="backer-name">Bethnal Green Ventures</div>
+        <div class="backer-desc">
+          Fondo de inversión de impacto del Reino Unido, enfocado en startups
+          de tecnología climática.
+        </div>
+      </div>
+
+      <div class="backer">
+        <div class="backer-logo">
+          <img src="ignite.png" alt="Ignite London" onerror="this.style.display='none';this.parentElement.innerHTML='<div style=&quot;font-size:16px;color:#162040;font-weight:700;letter-spacing:1px;&quot;>IGNITE LONDON</div>';" />
+        </div>
+        <div class="backer-name">Ignite London</div>
+        <div class="backer-desc">
+          Programa británico de aceleración de startups tecnológicas en etapa
+          temprana con potencial global.
+        </div>
+      </div>
+
+      <div class="backer">
+        <div class="backer-logo">
+          <img src="nvidia.png" alt="NVIDIA Inception Program" onerror="this.style.display='none';this.parentElement.innerHTML='<div style=&quot;font-size:16px;color:#162040;font-weight:700;letter-spacing:1px;&quot;>NVIDIA INCEPTION</div>';" />
+        </div>
+        <div class="backer-name">NVIDIA Inception Program</div>
+        <div class="backer-desc">
+          Programa global de NVIDIA para startups que aplican inteligencia
+          artificial a problemas reales.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 08 — FAQ                                                     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide faq slide-alt" id="s7">
+  <div class="slide-chrome">
+    <div class="chrome-logo">
+      <img src="vorntec.png" alt="VÖRNTEC" onerror="this.style.display='none';this.nextElementSibling.style.display='inline';" />
+      <span class="chrome-logo-fallback">VÖRNTEC</span>
+      <span class="chrome-divider">|</span>
+      <span class="chrome-tag">Preguntas frecuentes</span>
+    </div>
+    <div class="chrome-num"><strong>08</strong> / 09</div>
+  </div>
+
+  <div class="slide-body">
+    <div class="eyebrow fade-up">08 / Preguntas frecuentes</div>
+    <h2 class="h-display fade-up">
+      Preguntas <span class="accent">frecuentes</span><span class="light">.</span>
+    </h2>
+    <p class="lead fade-up">Hacer click en cualquier pregunta para ver la respuesta. Para preguntas adicionales, contactar directamente.</p>
+
+    <div class="faq-grid fade-up">
+      <button class="faq-card" data-faq="0">
+        <span class="faq-card-num">01</span>
+        <span class="faq-card-q">¿Cómo se maneja la confidencialidad de los datos?</span>
+        <span class="faq-card-toggle">+</span>
+      </button>
+      <button class="faq-card" data-faq="1">
+        <span class="faq-card-num">02</span>
+        <span class="faq-card-q">¿Qué sucede si no se dispone de etiquetas de fallas?</span>
+        <span class="faq-card-toggle">+</span>
+      </button>
+      <button class="faq-card" data-faq="2">
+        <span class="faq-card-num">03</span>
+        <span class="faq-card-q">¿Se requiere acceso a la red o a los sistemas SCADA?</span>
+        <span class="faq-card-toggle">+</span>
+      </button>
+      <button class="faq-card" data-faq="3">
+        <span class="faq-card-num">04</span>
+        <span class="faq-card-q">¿Es compatible con historians como PI, Wonderware o similares?</span>
+        <span class="faq-card-toggle">+</span>
+      </button>
+      <button class="faq-card" data-faq="4">
+        <span class="faq-card-num">05</span>
+        <span class="faq-card-q">¿En qué formato se entrega el reporte final?</span>
+        <span class="faq-card-toggle">+</span>
+      </button>
+      <button class="faq-card" data-faq="5">
+        <span class="faq-card-num">06</span>
+        <span class="faq-card-q">¿Existe algún compromiso después del análisis?</span>
+        <span class="faq-card-toggle">+</span>
+      </button>
+      <button class="faq-card" data-faq="6">
+        <span class="faq-card-num">07</span>
+        <span class="faq-card-q">¿Cuánto tiempo lleva el proceso completo?</span>
+        <span class="faq-card-toggle">+</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 09 — HABLEMOS                                                -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide hablemos" id="s8">
+  <div class="slide-chrome">
+    <div class="chrome-logo">
+      <img src="vorntec.png" alt="VÖRNTEC" onerror="this.style.display='none';this.nextElementSibling.style.display='inline';" />
+      <span class="chrome-logo-fallback">VÖRNTEC</span>
+      <span class="chrome-divider">|</span>
+      <span class="chrome-tag">Hablemos</span>
+    </div>
+    <div class="chrome-num"><strong>09</strong> / 09</div>
+  </div>
+
+  <div class="slide-body">
+    <div class="hablemos-inner">
+      <div class="hablemos-eyebrow fade-up">09 / Próximo paso</div>
+      <h2 class="fade-up">
+        Iniciemos el <span class="accent">análisis</span><span class="light">.</span>
+      </h2>
+      <p class="lead fade-up" style="text-align:center;margin:32px auto 56px;max-width:560px;">
+        Para coordinar el envío de datos o resolver consultas técnicas
+        previas, contactar directamente al equipo de VÖRNTEC.
+      </p>
+      <div class="hablemos-meta fade-up">
+        <div class="hablemos-loc">
+          <strong>Londres</strong>
+          Reino Unido
+        </div>
+        <div class="hablemos-loc">
+          <strong>Buenos Aires</strong>
+          Argentina
+        </div>
+        <div class="hablemos-loc">
+          <strong>Email</strong>
+          web@vorntec.com
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hablemos-foot">© 2026 VÖRNTEC · vorntec.com</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- FAQ MODAL                                                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="faq-modal" id="faqModal">
+  <div class="faq-modal-content">
+    <button class="faq-modal-close" id="faqClose">×</button>
+    <div class="faq-modal-num" id="faqModalNum"></div>
+    <div class="faq-modal-q" id="faqModalQ"></div>
+    <div class="faq-modal-a" id="faqModalA"></div>
+  </div>
 </div>
 
-                    </div>
-                </div>
-            </div>
-        </div>
+<script>
+// ═══════ FAQ data ═════════════════════════════════════════════
+const FAQS = [
+  {
+    num: "01",
+    q: "¿Cómo se maneja la confidencialidad de los datos?",
+    a: `<p>Los datos compartidos se procesan exclusivamente en infraestructura de VÖRNTEC, no se redistribuyen, y se utilizan únicamente para generar el informe final. Es posible firmar un NDA previo al envío del primer archivo.</p>
+        <p>El análisis se realiza sobre telemetría operacional de sensores — presión, temperatura, caudal — que en sí misma no contiene información comercial sensible (precios, contratos, volúmenes de venta, datos de personal).</p>`,
+  },
+  {
+    num: "02",
+    q: "¿Qué sucede si no se dispone de etiquetas de fallas?",
+    a: `<p>No es un requisito. La capa principal del sistema es <em>no supervisada</em>: aprende qué constituye operación normal a partir de los datos compartidos y detecta desviaciones significativas sin necesidad de ejemplos previos etiquetados. El sistema funciona desde el día uno.</p>
+        <p>En caso de disponer posteriormente de etiquetas validadas, es posible activar la capa supervisada de clasificación para identificar el tipo específico de falla — aunque no es un requisito para iniciar.</p>`,
+  },
+  {
+    num: "03",
+    q: "¿Se requiere acceso a la red o a los sistemas SCADA?",
+    a: `<p>No. El análisis se realiza exclusivamente sobre los archivos CSV compartidos. No se establecen conexiones a la red interna, no se instalan componentes en sistemas existentes, y no se consume ancho de banda de la infraestructura del cliente.</p>
+        <p>Para una eventual integración productiva posterior, se evalúan opciones estándar (OPC-UA, API REST, export periódico) — pero el análisis inicial no requiere ninguna de ellas.</p>`,
+  },
+  {
+    num: "04",
+    q: "¿Es compatible con historians como PI, Wonderware o similares?",
+    a: `<p>Sí. Para el análisis inicial solo es necesario un export CSV — todos los historians comerciales (OSIsoft PI, AVEVA Wonderware, GE Proficy, Honeywell Uniformance, Siemens WinCC, Aspen IP.21, Ignition, etc.) cuentan con funcionalidad de export estándar.</p>
+        <p>Para integraciones productivas posteriores, el sistema soporta OPC-UA, OSIsoft PI AF SDK, REST APIs y otros protocolos industriales estándar.</p>`,
+  },
+  {
+    num: "05",
+    q: "¿En qué formato se entrega el reporte final?",
+    a: `<p>El entregable es un informe ejecutivo en PDF con los hallazgos principales, casos específicos detectados, métricas de confianza y recomendaciones. El reporte se acompaña de una sesión de presentación en vivo con el equipo técnico del cliente.</p>
+        <p>Adicionalmente, los datos crudos del análisis (anomalías detectadas, scores, timelines) pueden compartirse en formato CSV o JSON.</p>`,
+  },
+  {
+    num: "06",
+    q: "¿Existe algún compromiso después del análisis?",
+    a: `<p>Ninguno. El análisis es <em>completamente gratuito y sin compromiso</em>. Una vez entregado el informe, la decisión de avanzar con un piloto productivo queda enteramente del lado del cliente — o el reporte puede utilizarse como input para decisiones internas independientes.</p>
+        <p>En caso de decidirse el avance, las condiciones del piloto se discuten en ese momento. En caso contrario, el cliente recibe igualmente una mirada externa profesional sobre sus datos operacionales.</p>`,
+  },
+  {
+    num: "07",
+    q: "¿Cuánto tiempo lleva el proceso completo?",
+    a: `<p>Desde la recepción de los datos hasta la entrega del informe final, el plazo es de aproximadamente <strong>3 meses</strong>. Durante ese período se realiza el análisis exploratorio, la construcción de features, la calibración del modelo sobre los datos específicos del cliente, y la validación de los hallazgos previa a la presentación.</p>
+        <p>El tiempo requerido del lado del cliente es prácticamente cero — solo el momento inicial de exportar los CSV y la sesión final de presentación de resultados.</p>`,
+  },
+];
 
-        <p class="highlight-box" style="margin-top: auto; padding-top: 2rem; font-size: 1.15rem; color: #ffffff; text-align: center;">
-            The timing is ideal to deploy predictive AI for emissions.
-        </p>
-    </div>
-</section>
+// ═══════ FAQ modal ═════════════════════════════════════════════
+const modal = document.getElementById('faqModal');
+const modalNum = document.getElementById('faqModalNum');
+const modalQ = document.getElementById('faqModalQ');
+const modalA = document.getElementById('faqModalA');
+const modalClose = document.getElementById('faqClose');
 
-<!-- Slide 5: Current Solutions Don't Scale -->
-<section data-slide="5">
-    <div class="slide-content">
-        <h2>Today's Approach Doesn't Scale</h2>
-        
-        <div style="flex: 1; display: flex; flex-direction: column;">
-            <div class="comparison-container">
-                <div class="old-way">
-                    <h3>Today's Approach</h3>
-                    <h4>HARDWARE-BASED (REACTIVE)</h4>
-                    <div class="comparison-content">
-                        <div class="comparison-list">
-                            <p style="margin-bottom: 0.6rem;"><strong>Satellites</strong> — expensive, only super-emitters, weather-dependent</p>
-                            <p style="margin-bottom: 0.6rem;"><strong>Drones</strong> — non-continuous, weather-dependent, requires certifications</p>
-                            <p style="margin-bottom: 0.6rem;"><strong>Aircraft</strong> — expensive, not continuous, heavily regulated</p>
-                            <p style="margin-bottom: 0.6rem;"><strong>Handheld sensors</strong> — manual, slow, weather-dependent</p>
-                            <p style="margin-bottom: 0;"><strong>Fixed sensors</strong> — millions to scale and maintain</p>
-                        </div>
-                        <div class="comparison-footer" style="border-top-color: rgba(255, 60, 60, 0.2);">
-                            <p style="color: #ff6b6b; font-weight: 500; margin-bottom: 0.4rem; font-size: 0.9rem;">THE PROBLEM:</p>
-                            <p style="font-size: 0.8rem; line-height: 1.5; color: #d0d0d0;">Only confirm leaks while measuring. Cannot determine duration. Miss intermittent leaks entirely.</p>
-                        </div>
-                    </div>
-                </div>
+document.querySelectorAll('.faq-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const idx = parseInt(card.dataset.faq);
+    const faq = FAQS[idx];
+    modalNum.textContent = `Pregunta ${faq.num}`;
+    modalQ.textContent = faq.q;
+    modalA.innerHTML = faq.a;
+    modal.classList.add('open');
+  });
+});
 
-                <div class="new-way">
-                    <h3>VÖRNTEC's Approach</h3>
-                    <h4 style="margin-bottom: 0.6rem;">SOFTWARE-BASED (PREDICTIVE)</h4>
-                    <div class="comparison-content">
-                        <div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-start;">
-                            <p style="font-size: 0.9rem; line-height: 1.6; color: #d8d8d8; margin-bottom: 0.6rem;">
-                                <strong>SCADA</strong> - Use the operational data operators already have.
-                            </p>
-                            <p style="font-size: 0.9rem; line-height: 1.6; color: #d8d8d8; margin-bottom: 0.6rem;">
-                                <strong>AI</strong> - Predict leaks before they happen with AI pattern recognition.
-                            </p>
-                            <p style="font-size: 0.9rem; line-height: 1.6; color: #d8d8d8; margin-bottom: 0.6rem;">
-                                <strong>Intermittent events</strong> - Catch intermittent events that hardware misses.
-                            </p>
-                            <p style="font-size: 0.9rem; line-height: 1.6; color: #d8d8d8; margin-bottom: 0;">
-                                <strong>Cost</strong> - 24/7 coverage at a fraction of the cost.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+modalClose.addEventListener('click', () => modal.classList.remove('open'));
+modal.addEventListener('click', (e) => {
+  if (e.target === modal) modal.classList.remove('open');
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') modal.classList.remove('open');
+});
 
-            <div class="highlight-box" style="margin-top: auto;">
-                Methane leaks typically last 3–5 hours <span class="source-icon">⁶</span>. To catch every leak with current methods, you'd need continuous sensors everywhere — costing millions.
-            </div>
-        </div>
+// ═══════ Nav dots ═════════════════════════════════════════════
+const slides = document.querySelectorAll('.slide');
+const dots = document.querySelectorAll('.nav-dot');
 
-        <div class="source-citation">
-            ⁶ Wang et al., 2022; Stokes et al., 2022
-        </div>
-    </div>
-</section>
+dots.forEach(dot => {
+  dot.addEventListener('click', () => {
+    const idx = parseInt(dot.dataset.slide);
+    slides[idx].scrollIntoView({ behavior: 'smooth' });
+  });
+});
 
-        <!-- Slide 7: Team -->
-        <section data-slide="7">
-            <div class="slide-content">
-                <h2>The Team: Built for Hard Problems</h2>
-                
-                <div style="flex: 1; display: flex; flex-direction: column;">
-                    <p style="font-size: 1.05rem; line-height: 1.6; color: #d0d0d0; margin-bottom: 1.5rem;">
-                        We spent a year validating this problem. <span class="accent">Now we're ready to solve it.</span>
-                    </p>
+// ═══════ Active slide tracking + fade-up animation ═══════════
+let currentSlide = 0;
 
-                    <h3 class="mono" style="margin-top: 1.5rem; margin-bottom: 1.2rem;">WHO WE ARE</h3>
+const slideObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const idx = Array.from(slides).indexOf(entry.target);
+      currentSlide = idx;
+      dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+      entry.target.classList.add('active');
+      // Trigger fade-up animations within this slide
+      entry.target.querySelectorAll('.fade-up').forEach(el => el.classList.add('in'));
+    }
+  });
+}, {
+  threshold: 0.5,
+});
 
-                    <div class="founder-grid">
-                        <div class="founder">
-                            <img src="images/matias-profile.jpg" alt="Portrait of Matías" class="avatar">
-                            <h4>Matías — the artist</h4>
-                            <p style="text-align: justify;"><strong>Founded Practical</strong> — embedded with O&G operators in Middle East</p>
-                            <p style="text-align: justify;">Understands operator workflows and field realities, helped tech and energy companies scale across GCC, Europe, and LATAM.</p>
-                            <p style="font-style: italic; color: #7a7f95; font-size: 0.85rem;">"Big picture to smallest detail"</p>
-                        </div>
-                        <div class="founder">
-                            <img src="images/marco-profile.jpg" alt="Portrait of Marco" class="avatar">
-                            <h4>Marco — the sailor</h4>
-                            <p style="text-align: justify;"><strong>Founded MST Technology (IoT)</strong> — led ops at Oxford Quantum Circuits (pre-seed → Series C)</p>
-                            <p style="text-align: justify;">Built and managed mission-critical data infrastructure across NY, London, and Tokyo.</p>
-                            <p style="font-style: italic; color: #7a7f95; font-size: 0.85rem;">"Adaptable when context changes"</p>
-                        </div>
-                    </div>
+slides.forEach(slide => slideObserver.observe(slide));
 
-                    <p style="margin-top: auto; padding-top: 1.5rem; font-size: 1rem; color: #2F488E; text-align: center;">
-                        Operational insight + Technical design + Resilience
-                    </p>
-                </div>
-            </div>
-        </section>
+// Trigger first slide animations on load
+window.addEventListener('load', () => {
+  slides[0].classList.add('active');
+  slides[0].querySelectorAll('.fade-up').forEach(el => el.classList.add('in'));
+});
 
-        <!-- Slide 8: Solution -->
-        <section data-slide="8">
-            <div class="slide-content">
-                <div class="solution-hero">
-                    <h2 style="border: none; padding: 0; margin-bottom: 0.8rem;">What We Do: We Turn <span class="accent">Operational Data</span> Into Predictive Intelligence</h2>
-                    <p class="solution-statement" style="font-size: 1.2rem; margin-bottom: 1.2rem;">
-                        Detect leak patterns using AI before they occur.
-                    </p>
-                </div>
+// ═══════ Keyboard navigation ═════════════════════════════════
+document.addEventListener('keydown', (e) => {
+  if (modal.classList.contains('open')) return;
+  if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
+    e.preventDefault();
+    if (currentSlide < slides.length - 1) {
+      slides[currentSlide + 1].scrollIntoView({ behavior: 'smooth' });
+    }
+  } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+    e.preventDefault();
+    if (currentSlide > 0) {
+      slides[currentSlide - 1].scrollIntoView({ behavior: 'smooth' });
+    }
+  } else if (e.key === 'Home') {
+    e.preventDefault();
+    slides[0].scrollIntoView({ behavior: 'smooth' });
+  } else if (e.key === 'End') {
+    e.preventDefault();
+    slides[slides.length - 1].scrollIntoView({ behavior: 'smooth' });
+  }
+});
+</script>
 
-                <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                    <div class="solution-grid">
-                        <div class="solution-card">
-                            <div class="solution-number">1</div>
-                            <h4>INGEST</h4>
-                            <p>Connects to SCADA and ERP systems. Continuous monitoring of pressure, temperature, flow data.</p>
-                        </div>
-                        <div class="solution-card">
-                            <div class="solution-number">2</div>
-                            <h4>PREDICT</h4>
-                            <p>ML algorithms estimate leak probability. AI interprets operational context like a domain expert.</p>
-                        </div>
-                        <div class="solution-card">
-                            <div class="solution-number">3</div>
-                            <h4>ACT</h4>
-                            <p>AI Agent collaborates with teams via Microsoft Teams. Automatically creates work orders in ERP (e.g., SAP).</p>
-                        </div>
-                    </div>
-
-                    <div class="highlight-box" style="margin-top: auto;">
-                        <strong style="color: #2F488E;">Industry Proof:</strong> Chevron found that 79% of detected events could have their source and duration determined using existing operational data <span class="source-icon">⁸</span>. The insight is already in the system.
-                    </div>
-                </div>
-
-                <div class="source-citation">
-                    ⁸ Ravikumar et al., Environmental Science & Technology, 2020
-                </div>
-            </div>
-        </section>
-
-<!-- Slide 9: Technical Validation -->
-<section data-slide="9">
-    <div class="slide-content">
-        <h2 style="margin-bottom: 2rem;">Proven Model Accuracy: 99.58% on Peer-Reviewed Sensor Dataset</h2>
-        
-        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
-            <div class="two-col" style="gap: 3rem; align-items: center;">
-                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-                    <div>
-                        <h3 class="mono" style="margin-bottom: 1rem; color: #2F488E; font-size: 1rem;">PROOF OF CONCEPT</h3>
-                        
-                        <p style="font-size: 1rem; line-height: 1.6; color: #d0d0d0; margin-bottom: 1.2rem;">
-                            We validated our ML approach on the <strong style="color: #2F488E;">UCI Gas Sensor Array Dataset</strong> — a peer-reviewed benchmark of real sensor data.
-                        </p>
-                    </div>
-
-                    <div style="background: rgba(47, 72, 142, 0.06); border: 1px solid rgba(47, 72, 142, 0.25); border-radius: 10px; padding: 1.8rem;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.2rem;">
-                            <div>
-                                <div style="font-size: 2.8rem; font-weight: 300; color: #2F488E; margin-bottom: 0.4rem;">99.58%</div>
-                                <div style="font-size: 0.9rem; color: #b0b5c8;">Accuracy</div>
-                            </div>
-                            <div>
-                                <div style="font-size: 2.8rem; font-weight: 300; color: #00ff88; margin-bottom: 0.4rem;">1,912</div>
-                                <div style="font-size: 0.9rem; color: #b0b5c8;">True Positives</div>
-                            </div>
-                        </div>
-                        
-                        <div style="border-top: 1px solid rgba(47, 72, 142, 0.3); padding-top: 1rem;">
-                            <ul style="font-size: 0.9rem; line-height: 1.5; margin: 0;">
-                                <li style="color: #00ff88; margin-bottom: 0.5rem;">8 False Negatives (0.42%)</li>
-                                <li style="color: #00ff88; margin-bottom: 0;">8 False Positives (0.14%)</li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div style="background: rgba(0, 0, 0, 0.3); border-radius: 8px; padding: 1rem;">
-                        <p style="font-size: 0.85rem; color: #b0b5c8; margin: 0; line-height: 1.5;">
-                            <strong style="color: #f5f5f5;">Dataset:</strong> 7,680 readings across 4 gas types with 36-month sensor drift simulation
-                        </p>
-                    </div>
-                </div>
-
-                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-                    <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(47, 72, 142, 0.3); border-radius: 10px; padding: 1.8rem; text-align: center;">
-                        <h4 style="color: #2F488E; font-size: 1.1rem; margin-bottom: 1.2rem; font-weight: 500;">Model Performance</h4>
-                        <div style="background: rgba(47, 72, 142, 0.1); border-radius: 6px; padding: 1rem; margin-bottom: 0.8rem;">
-                            <img src="images/accuracy.png" alt="Model Accuracy Chart" style="width: 100%; height: auto; opacity: 1; filter: none;">
-                        </div>
-                        <p style="font-size: 0.8rem; color: #b0b5c8; line-height: 1.4; margin: 0;">
-                            Performance across gas types and sensor drift conditions
-                        </p>
-                    </div>
-
-                    <div style="background: rgba(0, 102, 255, 0.06); border-left: 3px solid #2F488E; padding: 1.3rem; font-style: italic; border-radius: 0 4px 4px 0;">
-                        <p style="font-size: 1rem; line-height: 1.5; color: #d8d8d8; margin: 0;">
-                            This proves our ML approach works. Next: adapt it to SCADA data for methane leak prediction.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-        <!-- Slide 10: Built for Human Collaboration -->
-        <section data-slide="10">
-            <div class="slide-content">
-                <h2>Built for Operators: AI That Collaborates With Your Team Seamlessly in Real Time</h2>
-                
-                <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                    <p style="font-size: 0.9rem; line-height: 1.4; color: #d0d0d0; margin-bottom: 0.8rem; text-align: center;">
-                        The best algorithm is worthless if operators don't act on it. We integrate directly into daily workflows.
-                    </p>
-
-                    <div class="teams-chat-container">
-                        <div class="teams-header">
-                            <div class="teams-logo">T</div>
-                            <div class="teams-title">Microsoft Teams – Maintenance / LDAR</div>
-                        </div>
-
-                        <div class="chat-scroll-container" id="chatContainer">
-                            <div class="chat-message delay-1">
-                                <div class="message-header">
-                                    <div class="message-avatar avatar-bot">VA</div>
-                                    <div class="message-name">VÖRNTEC Agent</div>
-                                </div>
-                                <div class="message-bubble message-bot">
-                                    🚨 <strong>Predictive Leak Alert</strong><br><br>
-                                    I've detected an anomaly with a high probability of turning into a leak:<br><br>
-                                    📍 Location: Well #47 – Valve A-23<br>
-                                    ⏱️ Estimated time: 72 hours<br>
-                                    🎯 Confidence: 94%<br>
-                                    📊 Estimated emissions: 18 kg CH₄/day<br>
-                                    💰 Financial impact: USD 1,200/day<br><br>
-                                    Would you like me to create a preventive work order?
-                                </div>
-                            </div>
-
-                            <div class="chat-message delay-2">
-                                <div class="message-header">
-                                    <div class="message-avatar avatar-user">JR</div>
-                                    <div class="message-name">Javier Ruiz</div>
-                                </div>
-                                <div class="message-bubble message-user">
-                                    Who is available to attend this valve today?
-                                </div>
-                            </div>
-
-                            <div class="chat-message delay-3">
-                                <div class="message-header">
-                                    <div class="message-avatar avatar-bot">VA</div>
-                                    <div class="message-name">VÖRNTEC Agent</div>
-                                </div>
-                                <div class="message-bubble message-bot">
-                                    <strong>Available team:</strong><br><br>
-                                    👤 North Maintenance<br>
-                                    👨‍💼 Supervisor: M. Fernández<br>
-                                    📅 Today 14:00–18:00<br>
-                                    🚗 12 km (≈20 min)
-                                </div>
-                            </div>
-
-                            <div class="chat-message delay-4">
-                                <div class="message-header">
-                                    <div class="message-avatar avatar-user">JR</div>
-                                    <div class="message-name">Javier Ruiz</div>
-                                </div>
-                                <div class="message-bubble message-user">
-                                    Perfect. Create the work order with high priority and notify the supervisor.
-                                </div>
-                            </div>
-
-                            <div class="chat-message delay-5">
-                                <div class="message-header">
-                                    <div class="message-avatar avatar-bot">VA</div>
-                                    <div class="message-name">VÖRNTEC Agent</div>
-                                </div>
-                                <div class="message-bubble message-bot">
-                                    ✅ <strong>Action completed successfully</strong><br><br>
-                                    📋 WO #2025-0847 created in SAP PM<br>
-                                    ⚠️ Priority: High<br>
-                                    📅 Today 14:00<br>
-                                    👨‍💼 Assigned to: M. Fernández<br>
-                                    ✉️ Notification sent<br><br>
-                                    The system will continue monitoring this valve.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 0.8rem; padding: 0.8rem; background: rgba(47, 72, 142, 0.04); border: 1px solid rgba(47, 72, 142, 0.2); border-radius: 8px;">
-                        <h3 class="mono" style="margin-bottom: 0.5rem; color: #2F488E; font-size: 0.7rem; text-align: center;">EXPERT COLLABORATION</h3>
-                        <p style="font-size: 0.75rem; color: #d0d0d0; text-align: center; line-height: 1.4; margin: 0;">
-                            Like having the best domain expert working alongside your team — providing insights, coordinating actions, and ensuring nothing falls through the cracks. This isn't just reporting; it's a new way of working together.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-<!-- Slide 11: Bridge to SCADA -->
-<section data-slide="11">
-    <div class="slide-content">
-        <h2 style="margin-bottom: 1rem;">From Lab Validation to Operational Deployment</h2>
-        
-        <div style="flex: 1; display: flex; flex-direction: column;">
-            <p style="font-size: 0.95rem; line-height: 1.5; color: #d0d0d0; margin-bottom: 1.2rem; text-align: center;">
-                Our validated approach translates directly to operational methane detection
-            </p>
-
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.2rem; margin-bottom: 1.2rem; flex: 1;">
-                <div style="background: rgba(0, 255, 136, 0.04); border: 1px solid rgba(0, 255, 136, 0.2); border-radius: 8px; padding: 1rem; display: flex; flex-direction: column;">
-                    <h3 style="color: #00ff88; font-size: 0.85rem; margin-bottom: 1rem; text-align: center; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">DEPLOYED</h3>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; flex: 1;">
-                        <div>
-                            <h4 style="color: #00ff88; font-size: 0.9rem; margin-bottom: 0.8rem; font-weight: 500;">Algorithms Validated</h4>
-                            <ul style="font-size: 0.8rem; margin: 0; line-height: 1.5; list-style: none; padding: 0;">
-                                <li style="margin-bottom: 0.6rem; padding-left: 0;"><strong style="color: #f5f5f5;">Multi-sensor fusion:</strong> 7 sensors → prediction</li>
-                                <li style="margin-bottom: 0.6rem; padding-left: 0;"><strong style="color: #f5f5f5;">Drift compensation:</strong> Model adapts over time</li>
-                                <li style="margin-bottom: 0.6rem; padding-left: 0;"><strong style="color: #f5f5f5;">Temporal patterns:</strong> 56 time-based features</li>
-                                <li style="margin-bottom: 0; padding-left: 0;"><strong style="color: #f5f5f5;">Real-time:</strong> &lt;100ms latency</li>
-                            </ul>
-                        </div>
-
-                        <div>
-                            <h4 style="color: #00ff88; font-size: 0.9rem; margin-bottom: 0.8rem; font-weight: 500;">AI Agent</h4>
-                            <ul style="font-size: 0.8rem; margin: 0; line-height: 1.5; list-style: none; padding: 0;">
-                                <li style="margin-bottom: 0.6rem; padding-left: 0;"><strong style="color: #f5f5f5;">Learns patterns:</strong> from operational data</li>
-                                <li style="margin-bottom: 0.6rem; padding-left: 0;"><strong style="color: #f5f5f5;">Detects anomaly:</strong> predicts leak probability</li>
-                                <li style="margin-bottom: 0.6rem; padding-left: 0;"><strong style="color: #f5f5f5;">Gathers context:</strong> pulls relevant data</li>
-                                <li style="margin-bottom: 0.6rem; padding-left: 0;"><strong style="color: #f5f5f5;">Alerts via Teams:</strong> notifies operators</li>
-                                <li style="margin-bottom: 0.6rem; padding-left: 0;"><strong style="color: #f5f5f5;">Opens WO in SAP:</strong> creates work order</li>
-                                <li style="margin-bottom: 0; padding-left: 0;"><strong style="color: #f5f5f5;">Tracks to close:</strong> monitors resolution</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="background: rgba(47, 72, 142, 0.06); border: 2px solid #2F488E; border-radius: 8px; padding: 1rem; display: flex; flex-direction: column;">
-                    <h3 style="color: #2F488E; font-size: 0.85rem; margin-bottom: 1rem; text-align: center; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">NEXT MILESTONE</h3>
-                    
-                    <h4 style="color: #2F488E; font-size: 0.9rem; margin-bottom: 0.8rem; font-weight: 500;">Validation</h4>
-
-                    <ul style="font-size: 0.75rem; line-height: 1.5; margin: 0; list-style: none; padding: 0;">
-                        <li style="margin-bottom: 0.6rem; padding-left: 0;"><strong style="color: #f5f5f5;">Train on operator data:</strong> SCADA (P, T, F, composition)</li>
-                        <li style="margin-bottom: 0.6rem; padding-left: 0;"><strong style="color: #f5f5f5;">Label operator leaks:</strong> historical records</li>
-                        <li style="margin-bottom: 0.6rem; padding-left: 0;"><strong style="color: #f5f5f5;">Adapt 56 features:</strong> to operations</li>
-                        <li style="margin-bottom: 0; padding-left: 0;"><strong style="color: #f5f5f5;">Validate window:</strong> predict X hrs ahead</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div style="margin-top: auto; padding: 0.7rem; background: rgba(47, 72, 142, 0.06); border-left: 3px solid #2F488E; border-radius: 0 4px 4px 0;">
-                <p style="font-size: 0.85rem; color: #d8d8d8; margin: 0; line-height: 1.4;">
-                    
-                </p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<style>
-/* Override global li::before for slide 11 specifically */
-section[data-slide="11"] li::before {
-    content: none !important;
-}
-</style>
-<!-- Slide: Business Model -->
-<section data-slide="X">
-    <div class="slide-content">
-        <h2>Business Model: Simple, Scalable SaaS</h2>
-        
-        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
-            <div class="two-col" style="gap: 2rem; align-items: start; margin-bottom: 1.5rem;">
-                <div>
-                    <div style="background: rgba(0, 102, 255, 0.03); border: 1px solid rgba(0, 102, 255, 0.15); border-radius: 8px; padding: 1.2rem;">
-                        <h3 style="color: #2F488E; font-size: 1rem; margin-bottom: 0.8rem; font-weight: 500;">SaaS Platform</h3>
-                        <ul style="font-size: 0.85rem; line-height: 1.6; margin: 0; list-style: none; padding: 0;">
-                            <li style="margin-bottom: 0.5rem; padding-left: 0;">Cloud-based AI agent connects directly to your existing infrastructure</li>
-                            <li style="margin-bottom: 0.5rem; padding-left: 0;">SCADA integration for real-time monitoring</li>
-                            <li style="margin-bottom: 0.5rem; padding-left: 0;">ERP integration (SAP) for automated work orders</li>
-                            <li style="margin-bottom: 0; padding-left: 0;">Microsoft Teams integration for seamless collaboration</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div>
-                    <div style="background: rgba(47, 72, 142, 0.04); border: 1px solid rgba(47, 72, 142, 0.2); border-radius: 8px; padding: 1.2rem;">
-                        <h3 style="color: #2F488E; font-size: 1rem; margin-bottom: 0.8rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Multi-Agent Ecosystem</h3>
-                        <p style="font-size: 0.85rem; color: #b0b5c8; margin-bottom: 0.8rem; line-height: 1.5;">Specialized agents for environmental and cost impact:</p>
-                        <ul style="font-size: 0.85rem; line-height: 1.6; margin: 0; list-style: none; padding: 0;">
-                            <li style="margin-bottom: 0.5rem; padding-left: 0;"><strong style="color: #f5f5f5;">Methane agent:</strong> Emissions monitoring and prediction</li>
-                            <li style="margin-bottom: 0.5rem; padding-left: 0;"><strong style="color: #f5f5f5;">Water agent:</strong> Water usage optimization and leak detection</li>
-                            <li style="margin-bottom: 0; padding-left: 0;"><strong style="color: #f5f5f5;">Sand agent:</strong> Proppant management and supply optimization</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <div style="display: flex; justify-content: center;">
-                <div style="background: rgba(47, 72, 142, 0.06); border: 2px solid #2F488E; border-radius: 8px; padding: 1.5rem; text-align: center; max-width: 400px;">
-                    <div style="font-size: 2.5rem; font-weight: 300; color: #2F488E; margin-bottom: 0.5rem;">£15K/month</div>
-                    <div style="font-size: 0.9rem; color: #b0b5c8; margin-bottom: 1rem;">per AI agent</div>
-                    <ul style="font-size: 0.85rem; line-height: 1.5; margin: 0; list-style: none; padding: 0; color: #d0d0d0; text-align: left;">
-                        <li style="margin-bottom: 0.4rem; padding-left: 0;">✓ No hardware costs</li>
-                        <li style="margin-bottom: 0.4rem; padding-left: 0;">✓ No installation fees</li>
-                        <li style="margin-bottom: 0.4rem; padding-left: 0;">✓ No maintenance overhead</li>
-                        <li style="margin-bottom: 0; padding-left: 0; color: #00ff88; font-weight: 500;">✓ One prevented leak pays for 6+ months</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<style>
-/* Override global li::before for business model slide specifically */
-section[data-slide="X"] li::before {
-    content: none !important;
-}
-</style>
-
-        <!-- Slide 6: Vision -->
-        <section data-slide="6">
-            <div class="slide-content">
-                <div style="max-width: 800px; margin: 0 auto; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                    <h2 style="border: none; padding: 0; margin-bottom: 1.5rem;">Our Vision: The ChatGPT of Emissions</h2>
-                    
-                    <div class="text-block" style="margin: 2rem 0;">
-                        <p style="font-size: 1.3rem; line-height: 1.6; color: #d8d8d8; font-weight: 300; margin-bottom: 1.5rem;">
-                            An open ecosystem where universities, companies, governments, and institutions connect to our models to build their own emissions solutions.
-                        </p>
-                        <p style="font-size: 1.05rem; line-height: 1.6; color: #b0b5c8;">
-                            By standardizing how operational data becomes emissions intelligence, we unlock breakthroughs for the entire energy sector.
-                        </p>
-                    </div>
-
-                    <div class="stat-grid" style="margin: 1rem 0;">
-                        <div class="stat-card">
-                            <div class="stat-number">3.6M Cars</div>
-                            <div class="stat-label">Equivalent petrol cars taken off the road for a full year, per operator <span class="source-icon">⁷</span></div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number">17 Mt CO₂e/year</div>
-                            <div class="stat-label">Annual avoided emissions per operator</div>
-                        </div>
-                    </div>
-
-                    <div style="margin: 2rem 0; padding: 1.5rem 0; border-top: 1px solid rgba(0, 102, 255, 0.2); border-bottom: 1px solid rgba(0, 102, 255, 0.2);">
-                        <p style="font-size: 1.35rem; color: #2F488E; font-weight: 300; letter-spacing: -0.01em;">
-                            From single-operator use cases to a global platform for emissions intelligence.
-                        </p>
-                    </div>
-
-                    
-                </div>
-
-                <div class="source-citation">
-                    ⁷ U.S. Environmental Protection Agency (EPA). Greenhouse Gas Emissions from a Typical Passenger Vehicle.
-                </div>
-            </div>
-        </section>
-
-        
-        <!-- Slide 13: Thank You -->
-        <section data-slide="13">
-            <div class="slide-content" style="text-align: center; max-width: 650px; margin: 0 auto; justify-content: center;">
-                <div>
-                    <h1 style="font-size: 2.8rem; margin-bottom: 1.5rem;">Thank You</h1>
-                    
-                    <div style="margin: 2.5rem 0;">
-                        <p style="font-size: 1.2rem; line-height: 1.6; color: #d8d8d8; margin-bottom: 1.5rem;">
-                            Let's make synergies to turn operational data into climate impact.
-                        </p>
-                    </div>
-
-                    <div style="display: flex; gap: 2.5rem; align-items: center; justify-content: center; margin: 2.5rem 0;">
-                        <img src="images/vorntec.png" alt="VORNTEC" class="logo" style="margin: 0; max-height: 55px;">
-                    </div>
-
-                    <div style="background: rgba(47, 72, 142, 0.04); border: 1px solid rgba(47, 72, 142, 0.2); border-radius: 12px; padding: 1.5rem; margin: 2rem 0;">
-                        <p style="font-size: 1rem; color: #2F488E; margin-bottom: 0.6rem; font-weight: 500;">Contact</p>
-                        <p style="font-size: 0.9rem; color: #b0b5c8;">marco@vorntec.com</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </div>
-
-    <!-- Progress indicator -->
-    <div class="progress-indicator">
-        <div class="progress-dot active" data-slide="1"></div>
-        <div class="progress-dot" data-slide="2"></div>
-        <div class="progress-dot" data-slide="3"></div>
-        <div class="progress-dot" data-slide="4"></div>
-        <div class="progress-dot" data-slide="5"></div>
-        <div class="progress-dot" data-slide="6"></div>
-        <div class="progress-dot" data-slide="7"></div>
-        <div class="progress-dot" data-slide="8"></div>
-        <div class="progress-dot" data-slide="9"></div>
-        <div class="progress-dot" data-slide="10"></div>
-        <div class="progress-dot" data-slide="11"></div>
-        <div class="progress-dot" data-slide="12"></div>
-        <div class="progress-dot" data-slide="13"></div>
-    </div>
-
-    <div class="slide-number">
-        <span id="current-slide">01</span> / 13
-    </div>
-
-    <div class="nav-hint">
-        ← → to navigate
-    </div>
-
-    <script>
-        let currentSlide = 1;
-        const totalSlides = 13;
-        const sections = document.querySelectorAll('section');
-        const progressDots = document.querySelectorAll('.progress-dot');
-        const slideNumberDisplay = document.getElementById('current-slide');
-
-        function showSlide(n) {
-            if (n > totalSlides) currentSlide = totalSlides;
-            if (n < 1) currentSlide = 1;
-            else currentSlide = n;
-
-            sections.forEach((section, index) => {
-                section.classList.remove('active');
-                if (index === currentSlide - 1) {
-                    section.classList.add('active');
-                }
-            });
-
-            progressDots.forEach((dot, index) => {
-                dot.classList.remove('active');
-                if (index === currentSlide - 1) {
-                    dot.classList.add('active');
-                }
-            });
-
-            slideNumberDisplay.textContent = currentSlide.toString().padStart(2, '0');
-            
-            // Trigger auto-scroll when entering slide 10
-            if (currentSlide === 10) {
-                setTimeout(() => autoScrollChat(), 200);
-            }
-        }
-
-        function nextSlide() {
-            if (currentSlide < totalSlides) {
-                showSlide(currentSlide + 1);
-            }
-        }
-
-        function prevSlide() {
-            if (currentSlide > 1) {
-                showSlide(currentSlide - 1);
-            }
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
-                e.preventDefault();
-                nextSlide();
-            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-                e.preventDefault();
-                prevSlide();
-            } else if (e.key === 'Home') {
-                e.preventDefault();
-                showSlide(1);
-            } else if (e.key === 'End') {
-                e.preventDefault();
-                showSlide(totalSlides);
-            }
-        });
-
-        progressDots.forEach((dot, index) => {
-            dot.addEventListener('click', () => {
-                showSlide(index + 1);
-            });
-        });
-
-        let touchStartX = 0;
-        let touchEndX = 0;
-
-        document.addEventListener('touchstart', (e) => {
-            touchStartX = e.changedTouches[0].screenX;
-        });
-
-        document.addEventListener('touchend', (e) => {
-            touchEndX = e.changedTouches[0].screenX;
-            handleSwipe();
-        });
-
-        function handleSwipe() {
-            if (touchEndX < touchStartX - 50) {
-                nextSlide();
-            }
-            if (touchEndX > touchStartX + 50) {
-                prevSlide();
-            }
-        }
-
-        // Auto-scroll chat as messages appear - smooth and natural
-        function autoScrollChat() {
-            const chatContainer = document.getElementById('chatContainer');
-            if (!chatContainer) return;
-            
-            // Reset scroll to top first
-            chatContainer.scrollTop = 0;
-            
-            const delays = [
-                { delay: 0.5, selector: '.delay-1' },
-                { delay: 2.5, selector: '.delay-2' },
-                { delay: 4.5, selector: '.delay-3' },
-                { delay: 6.5, selector: '.delay-4' },
-                { delay: 8.5, selector: '.delay-5' }
-            ];
-            
-            delays.forEach(item => {
-                setTimeout(() => {
-                    const message = document.querySelector(item.selector);
-                    if (message && chatContainer) {
-                        // Scroll to show the new message at the bottom
-                        message.scrollIntoView({ 
-                            behavior: 'smooth', 
-                            block: 'end',
-                            inline: 'nearest'
-                        });
-                    }
-                }, item.delay * 1000 + 200);
-            });
-        }
-
-        showSlide(1);
-    </script>
 </body>
 </html>
