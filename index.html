@@ -1849,7 +1849,7 @@ body::before {
     <div class="faq-grid fade-up">
       <button class="faq-card" data-faq="0">
         <span class="faq-card-num">01</span>
-        <span class="faq-card-q">¿Cómo se maneja la confidencialidad de los datos?</span>
+        <span class="faq-card-q">¿Qué pasa si no tenemos datos de anomalías históricas?</span>
         <span class="faq-card-toggle">+</span>
       </button>
       <button class="faq-card" data-faq="1">
@@ -1859,12 +1859,12 @@ body::before {
       </button>
       <button class="faq-card" data-faq="2">
         <span class="faq-card-num">03</span>
-        <span class="faq-card-q">¿Se requiere acceso a la red o a los sistemas SCADA?</span>
+        <span class="faq-card-q">¿Nuestros datos SCADA no están prolijos, es un bloqueante?</span>
         <span class="faq-card-toggle">+</span>
       </button>
       <button class="faq-card" data-faq="3">
         <span class="faq-card-num">04</span>
-        <span class="faq-card-q">¿Es compatible con historians como PI, Wonderware o similares?</span>
+        <span class="faq-card-q">¿Impacto en la operación?</span>
         <span class="faq-card-toggle">+</span>
       </button>
       <button class="faq-card" data-faq="4">
@@ -1879,7 +1879,7 @@ body::before {
       </button>
       <button class="faq-card" data-faq="6">
         <span class="faq-card-num">07</span>
-        <span class="faq-card-q">¿Cuánto tiempo lleva el proceso completo?</span>
+        <span class="faq-card-q">¿Qué pasa si el sistema no detecta nada?</span>
         <span class="faq-card-toggle">+</span>
       </button>
     </div>
@@ -1947,9 +1947,8 @@ body::before {
 const FAQS = [
   {
     num: "01",
-    q: "¿Cómo se maneja la confidencialidad de los datos?",
-    a: `<p>Los datos compartidos se procesan exclusivamente en infraestructura de VÖRNTEC, no se redistribuyen, y se utilizan únicamente para generar el informe final. Es posible firmar un NDA previo al envío del primer archivo.</p>
-        <p>El análisis se realiza sobre telemetría operacional de sensores — presión, temperatura, caudal — que en sí misma no contiene información comercial sensible (precios, contratos, volúmenes de venta, datos de personal).</p>`,
+    q: "¿Qué pasa si no tenemos datos de anomalías históricas?",
+    a: `No es un problema. Los modelos no supervisados se calibran únicamente con datos de operación normal. En lugar de optimizar contra ejemplos de falla, se define el threshold probando distintos percentiles — P80, P85, P90, P95 — evaluando cuál produce la cantidad de alertas operacionalmente razonable.`,
   },
   {
     num: "02",
@@ -1959,21 +1958,19 @@ const FAQS = [
   },
   {
     num: "03",
-    q: "¿Se requiere acceso a la red o a los sistemas SCADA?",
-    a: `<p>No. El análisis se realiza exclusivamente sobre los archivos CSV compartidos. No se establecen conexiones a la red interna, no se instalan componentes en sistemas existentes, y no se consume ancho de banda de la infraestructura del cliente.</p>
-        <p>Para una eventual integración productiva posterior, se evalúan opciones estándar (OPC-UA, API REST, export periódico) — pero el análisis inicial no requiere ninguna de ellas.</p>`,
+    q: "¿Nuestros datos SCADA no están prolijos, es un bloqueante?",
+    a: `No. El diagnóstico de calidad de datos es parte del Mes 1 del piloto. Saber qué sensores tienen ruido conocido, qué períodos son operación normal vs mantenimiento, y qué valores son físicamente imposibles es parte del trabajo que hacemos juntos al inicio.`,
   },
   {
     num: "04",
-    q: "¿Es compatible con historians como PI, Wonderware o similares?",
+    q: "¿Impacto en la operación?",
     a: `<p>Sí. Para el análisis inicial solo es necesario un export CSV — todos los historians comerciales (OSIsoft PI, AVEVA Wonderware, GE Proficy, Honeywell Uniformance, Siemens WinCC, Aspen IP.21, Ignition, etc.) cuentan con funcionalidad de export estándar.</p>
         <p>Para integraciones productivas posteriores, el sistema soporta OPC-UA, OSIsoft PI AF SDK, REST APIs y otros protocolos industriales estándar.</p>`,
   },
   {
     num: "05",
     q: "¿En qué formato se entrega el reporte final?",
-    a: `<p>El entregable es un informe ejecutivo en PDF con los hallazgos principales, casos específicos detectados, métricas de confianza y recomendaciones. El reporte se acompaña de una sesión de presentación en vivo con el equipo técnico del cliente.</p>
-        <p>Adicionalmente, los datos crudos del análisis (anomalías detectadas, scores, timelines) pueden compartirse en formato CSV o JSON.</p>`,
+    a: `Ninguno. El sistema es exclusivamente de lectura. No escribe, no controla, no interfiere con ningún proceso en curso. Solo necesita acceso a datos históricos de sensores.`,
   },
   {
     num: "06",
@@ -1983,9 +1980,8 @@ const FAQS = [
   },
   {
     num: "07",
-    q: "¿Cuánto tiempo lleva el proceso completo?",
-    a: `<p>Desde la recepción de los datos hasta la entrega del informe final, el plazo es de aproximadamente <strong>3 meses</strong>. Durante ese período se realiza el análisis exploratorio, la construcción de features, la calibración del modelo sobre los datos específicos del cliente, y la validación de los hallazgos previa a la presentación.</p>
-        <p>El tiempo requerido del lado del cliente es prácticamente cero — solo el momento inicial de exportar los CSV y la sesión final de presentación de resultados.</p>`,
+    q: "¿Qué pasa si el sistema no detecta nada?",
+    a: `Es un resultado válido. Significa que los eventos no dejan huella distinguible en los datos disponibles con la resolución actual. Lo documentamos y lo entendemos juntos — también eso tiene valor diagnóstico.`,
   },
 ];
 
